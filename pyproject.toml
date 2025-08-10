@@ -1,13 +1,15 @@
 [project]
-name = "development-scripts"
+name = "moscripts"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "adisbladis", email = "adisbladis@gmail.com" }
+    { name = "andrewthomaslee", email = "andrewthomaslee.business@gmail.com" },
 ]
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.13"
+dependencies = [
+    "marimo>=0.14.16",
+]
 
 [build-system]
 requires = ["hatchling"]
