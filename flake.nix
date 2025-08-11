@@ -154,6 +154,12 @@
             in {
               type = "app";
               program = "${program}";
+              meta = let
+                app = lib.removeSuffix ".py" name;
+              in {
+                name = app;
+                description = "A app named ${app}";
+              };
             }
           )
       )
