@@ -33,6 +33,8 @@
     inherit (nixpkgs) lib;
     inherit (lib) filterAttrs hasSuffix;
 
+    forAllSystems = lib.genAttrs lib.systems.flakeExposed;
+
     # Load a uv workspace from a workspace root.
     # Uv2nix treats all uv projects as workspace projects.
     workspace = uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;};
@@ -52,10 +54,68 @@
 
     python = pkgs.python313;
 
-    pythonSet =
-      (pkgs.callPackage pyproject-nix.build.packages {
+    pythonSet = let
+      inherit (pkgs) stdenv;
+
+      baseSet = pkgs.callPackage pyproject-nix.build.packages {
         inherit python;
-      }).overrideScope
+      };
+
+      # An overlay of build fixups & test additions.
+      pyprojectOverrides = final: prev: {
+        # moscripts is the name of our example package
+        moscripts = prev.moscripts.overrideAttrs (old: {
+          passthru =
+            old.passthru
+            // {
+              # Put all tests in the passthru.tests attribute set.
+              # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
+              #
+              # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
+              tests = let
+                # Construct a virtual environment with only the test dependency-group enabled for testing.
+                virtualenv = final.mkVirtualEnv "moscripts-pytest-env" {
+                  moscripts = ["dev"];
+                };
+              in
+                (old.tests or {})
+                // {
+                  pytest = stdenv.mkDerivation {
+                    name = "${final.moscripts.name}-pytest";
+                    inherit (final.moscripts) src;
+                    nativeBuildInputs = [
+                      virtualenv
+                    ];
+                    dontConfigure = true;
+
+                    # Because this package is running tests, and not actually building the main package
+                    # the build phase is running the tests.
+                    #
+                    # In this particular example we also output a HTML coverage report, which is used as the build output.
+                    buildPhase = ''
+                      runHook preBuild
+                      pytest --junit-xml=pytest.xml
+                      runHook postBuild
+                    '';
+
+                    # Install the HTML coverage report into the build output.
+                    #
+                    # If you wanted to install multiple test output formats such as TAP outputs
+                    # you could make this derivation a multiple-output derivation.
+                    #
+                    # See https://nixos.org/manual/nixpkgs/stable/#chap-multiple-output for more information on multiple outputs.
+                    installPhase = ''
+                      runHook preInstall
+                      mv pytest.xml $out
+                      runHook postInstall
+                    '';
+                  };
+                };
+            };
+        });
+      };
+    in
+      baseSet.overrideScope
       (
         lib.composeManyExtensions [
           pyproject-build-systems.overlays.default
@@ -204,6 +264,11 @@
             export REPO_ROOT=$(git rev-parse --show-toplevel)
           '';
         };
+    };
+
+    # Construct flake checks from Python set
+    checks.x86_64-linux = {
+      inherit (pythonSet.moscripts.passthru.tests) pytest;
     };
   };
 }
