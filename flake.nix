@@ -126,6 +126,31 @@
 
     venv = pythonSet.mkVirtualEnv "moscripts-default-env" workspace.deps.default;
   in {
+    packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
+      name = "moscripts-bundled-apps";
+      src = ./.;
+      buildInputs = [venv];
+      buildPhase = ''
+        # Create the bin directory where our executables will go
+        mkdir -p $out/bin
+        # Find all Python files in the apps directory
+        for app in ${./apps}/*.py; do
+          # Get just the filename without path and extension
+          appname=$(basename "$app" .py)
+          # Create a wrapper script for each app
+          cat > $out/bin/$appname <<EOF
+        #!/usr/bin/env bash
+        # Auto-generated wrapper for $appname
+        exec ${venv}/bin/python ${./apps}/$appname.py "\$@"
+        EOF
+        # Make the wrapper executable
+        chmod +x $out/bin/$appname
+        done
+      '';
+      installPhase = "echo 'Bundled apps package created'";
+    };
+
+    # Create apps that are runnable with `nix run .#<app>`
     apps.x86_64-linux = let
       # Example base directory
       basedir = ./apps;
