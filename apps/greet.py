@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from development_scripts import main
+from moscripts import main
 
 
 if __name__ == "__main__":
