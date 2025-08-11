@@ -125,70 +125,54 @@
       );
 
     venv = pythonSet.mkVirtualEnv "moscripts-default-env" workspace.deps.default;
-  in {
-    packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
-      name = "moscripts-bundled-apps";
-      src = ./.;
-      buildInputs = [venv];
-      buildPhase = ''
-        # Create the bin directory where our executables will go
+  in let
+    # Shared logic for discovering Python apps in the apps directory
+    appsBasedir = ./apps;
+    appFiles = filterAttrs (name: type: type == "regular" && hasSuffix ".py" name) (
+      builtins.readDir appsBasedir
+    );
+    # Convert to a list of app names (without .py extension)
+    appNames = lib.mapAttrsToList (name: _: lib.removeSuffix ".py" name) appFiles;
+
+    # Helper function to create a patched executable from a Python script
+    makePatchedScript = appName:
+      pkgs.runCommand appName {buildInputs = [venv];} ''
         mkdir -p $out/bin
-        # Find all Python files in the apps directory
-        for app in ${./apps}/*.py; do
-          # Get just the filename without path and extension
-          appname=$(basename "$app" .py)
-          # Create a wrapper script for each app
-          cat > $out/bin/$appname <<EOF
-        #!/usr/bin/env bash
-        # Auto-generated wrapper for $appname
-        exec ${venv}/bin/python ${./apps}/$appname.py "\$@"
-        EOF
-        # Make the wrapper executable
-        chmod +x $out/bin/$appname
-        done
+        cp ${appsBasedir}/${appName}.py $out/bin/${appName}
+        chmod +x $out/bin/${appName}
+        patchShebangs $out/bin/${appName}
       '';
-      installPhase = "echo 'Bundled apps package created'";
+  in {
+    # Create a bundled package with all apps as direct executable scripts
+    packages.x86_64-linux.default = pkgs.symlinkJoin {
+      name = "moscripts-bundled-apps";
+      paths = map makePatchedScript appNames;
+      meta = {
+        description = "Bundled moscripts applications";
+        longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
+      };
     };
 
     # Create apps that are runnable with `nix run .#<app>`
-    apps.x86_64-linux = let
-      # Example base directory
-      basedir = ./apps;
-
-      # Get a list of regular Python files in example directory
-      files = filterAttrs (name: type: type == "regular" && hasSuffix ".py" name) (
-        builtins.readDir basedir
-      );
-    in
-      # Map over files to:
-      # - Rewrite script shebangs as shebangs pointing to the virtualenv
-      # - Strip .py suffixes from attribute names
-      #   Making a script "greet.py" runnable as "nix run .#greet"
+    apps.x86_64-linux =
+      # Map over discovered files to create apps with patched shebangs
+      # Making scripts runnable as "nix run .#<appname>"
       lib.mapAttrs' (
         name: _:
           lib.nameValuePair (lib.removeSuffix ".py" name) (
             let
-              script = basedir + "/${name}";
-
-              # Patch script shebang
-              program = pkgs.runCommand name {buildInputs = [venv];} ''
-                cp ${script} $out
-                chmod +x $out
-                patchShebangs $out
-              '';
+              appName = lib.removeSuffix ".py" name;
             in {
               type = "app";
-              program = "${program}";
-              meta = let
-                app = lib.removeSuffix ".py" name;
-              in {
-                name = app;
-                description = "A app named ${app}";
+              program = "${makePatchedScript appName}/bin/${appName}";
+              meta = {
+                name = appName;
+                description = "Python script ${appName} from moscripts";
               };
             }
           )
       )
-      files;
+      appFiles;
 
     devShells.x86_64-linux = {
       # It is of course perfectly OK to keep using an impure virtualenv workflow and only use uv2nix to build packages.
