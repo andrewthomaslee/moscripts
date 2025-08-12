@@ -114,6 +114,15 @@
       };
     };
 
+    makeDockerImage = appName:
+      pkgs.dockerTools.buildLayeredImage {
+        name = "moscripts-${appName}-docker";
+        contents = [(makePatchedScript appName)];
+        config = {
+          Cmd = ["/bin/${appName}"];
+        };
+      };
+
     # Dev shell helpers
     editableOverlay = workspace.mkEditablePyprojectOverlay {
       root = "$REPO_ROOT";
@@ -154,8 +163,9 @@
           longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
         };
       };
-      docker = lib.optionalAttrs pkgs.stdenv.isLinux pkgs.dockerTools.buildLayeredImage {
-        name = "moscripts-docker-image";
+      docker = lib.optionalAttrs pkgs.stdenv.isLinux (lib.genAttrs appNames makeDockerImage);
+      docker-all = lib.optionalAttrs pkgs.stdenv.isLinux pkgs.dockerTools.buildLayeredImage {
+        name = "moscripts-docker-image-all";
         contents = [(map makePatchedScript appNames)];
         config = {
           Cmd = ["/bin/greet"];
