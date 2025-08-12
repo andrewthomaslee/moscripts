@@ -137,12 +137,21 @@
     virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-env" workspace.deps.all;
   in {
     # Create a bundled package with all apps as direct executable scripts
-    packages.x86_64-linux.default = pkgs.symlinkJoin {
-      name = "moscripts-bundled-apps";
-      paths = map makePatchedScript appNames;
-      meta = {
-        description = "Bundled moscripts applications";
-        longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
+    packages.x86_64-linux = {
+      default = pkgs.symlinkJoin {
+        name = "moscripts-bundled-apps";
+        paths = map makePatchedScript appNames;
+        meta = {
+          description = "Bundled moscripts applications";
+          longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
+        };
+      };
+      docker = lib.optionalAttrs pkgs.stdenv.isLinux pkgs.dockerTools.buildLayeredImage {
+        name = "moscripts-bundled-apps";
+        contents = [venv (map makePatchedScript appNames)];
+        config = {
+          Cmd = ["${venv}/bin/python"];
+        };
       };
     };
 
