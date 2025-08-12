@@ -5,7 +5,7 @@ A collection of Python scripts
 # Installation
 ## Determinate Systems Nix installer
 Determinate Nix Installer is the easiest and most reliable way to install Nix on your system. This will enable flakes by default.
-1. Download [Determinate Systems Nix installer](https://github.com/DeterminateSystems/nix-installer)
+1. Download [Determinate Systems Nix installer](https://github.com/DeterminateSystems/nix-installer) with one command:
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate
 ```
