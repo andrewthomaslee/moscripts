@@ -12,7 +12,7 @@ curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determin
 ## Standalone Nix
 1. Download [Nix](https://nixos.org/download/)
 2. For Nix standalone (without NixOS or Home Manager):
-    Add the following line to your Nix configuration file, located at either ~/.config/nix/nix.conf or /etc/nix/nix.conf:
+    Add the following line to your Nix configuration file, located at either `~/.config/nix/nix.conf` or `/etc/nix/nix.conf`:
 ```
 experimental-features = nix-command flakes
 ```
