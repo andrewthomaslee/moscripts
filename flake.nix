@@ -201,7 +201,6 @@
           UV_PYTHON_DOWNLOADS = "never";
         };
         shellHook = ''
-          export SHELL=/run/current-system/sw/bin/bash
           unset PYTHONPATH
           export REPO_ROOT=$(git rev-parse --show-toplevel)
         '';
