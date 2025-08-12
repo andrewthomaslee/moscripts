@@ -148,7 +148,7 @@
       };
       docker = lib.optionalAttrs pkgs.stdenv.isLinux pkgs.dockerTools.buildLayeredImage {
         name = "moscripts-bundled-apps";
-        contents = [venv (map makePatchedScript appNames)];
+        contents = [venv (map makePatchedScript appNames) pkgs.uv];
         config = {
           Cmd = ["${venv}/bin/python"];
         };
