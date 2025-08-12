@@ -17,6 +17,10 @@ curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determin
 experimental-features = nix-command flakes
 ```
 
+# Discover available flake options
+```bash
+nix flake show github:andrewthomaslee/moscripts
+```
 
 # Usage
 To run apps:
@@ -29,5 +33,5 @@ nix build github:andrewthomaslee/moscripts
 ```
 To build docker image:
 ```bash
-nix build github:andrewthomaslee/moscripts#packages.x86_64-linux.docker
+nix build github:andrewthomaslee/moscripts#packages.greet
 ```
