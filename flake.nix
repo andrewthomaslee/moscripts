@@ -97,13 +97,16 @@
     );
     appNames = lib.mapAttrsToList (name: _: lib.removeSuffix ".py" name) appFiles;
 
+    # Shared build logic for creating executable scripts
+    makeExecutable = appName: ''
+      mkdir -p $out/bin
+      cp ${appsBasedir}/${appName}.py $out/bin/${appName}
+      chmod +x $out/bin/${appName}
+      patchShebangs $out/bin/${appName}
+    '';
+
     makePatchedScript = appName:
-      pkgs.runCommand appName {buildInputs = [venv];} ''
-        mkdir -p $out/bin
-        cp ${appsBasedir}/${appName}.py $out/bin/${appName}
-        chmod +x $out/bin/${appName}
-        patchShebangs $out/bin/${appName}
-      '';
+      pkgs.runCommand appName {buildInputs = [venv];} (makeExecutable appName);
 
     makeApp = appName: {
       type = "app";
@@ -114,13 +117,20 @@
       };
     };
 
-    makeDockerImage = appName:
+    makeDockerImage = appName: imageName:
       pkgs.dockerTools.buildLayeredImage {
-        name = "moscripts-${appName}-docker";
+        name = "moscripts-${imageName}";
         contents = [(makePatchedScript appName)];
         config = {
           Cmd = ["/bin/${appName}"];
         };
+      };
+
+    makeStandalonePackage = appName:
+      pkgs.stdenv.mkDerivation {
+        name = appName;
+        buildCommand = makeExecutable appName;
+        buildInputs = [venv];
       };
 
     # Dev shell helpers
@@ -165,12 +175,13 @@
           };
         };
       };
+      standalonePackages = lib.genAttrs appNames makeStandalonePackage;
       linuxPackages =
         if pkgs.stdenv.isLinux
-        then (lib.genAttrs appNames makeDockerImage)
+        then (lib.genAttrs appNames (appName: makeDockerImage appName "${appName}-container"))
         else {};
     in
-      basePackages // linuxPackages;
+      basePackages // standalonePackages // linuxPackages;
 
     # Create apps that are runnable with `nix run .#<app>`
     apps.x86_64-linux = lib.genAttrs appNames makeApp;
