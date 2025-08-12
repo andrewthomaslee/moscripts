@@ -34,8 +34,7 @@
     inherit (lib) filterAttrs hasSuffix;
 
     # System configuration
-    system = "x86_64-linux";
-    pkgs = nixpkgs.legacyPackages.${system};
+    pkgs = nixpkgs.legacyPackages.x86_64-linux;
     python = pkgs.python313;
 
     # Workspace and package setup
@@ -106,6 +105,15 @@
         patchShebangs $out/bin/${appName}
       '';
 
+    makeApp = appName: {
+      type = "app";
+      program = "${makePatchedScript appName}/bin/${appName}";
+      meta = {
+        name = appName;
+        description = "Python script ${appName} from moscripts";
+      };
+    };
+
     # Dev shell helpers
     editableOverlay = workspace.mkEditablePyprojectOverlay {
       root = "$REPO_ROOT";
@@ -147,32 +155,16 @@
         };
       };
       docker = lib.optionalAttrs pkgs.stdenv.isLinux pkgs.dockerTools.buildLayeredImage {
-        name = "moscripts-bundled-apps";
-        contents = [venv (map makePatchedScript appNames) pkgs.uv];
+        name = "moscripts-docker-image";
+        contents = [(map makePatchedScript appNames)];
         config = {
-          Cmd = ["${venv}/bin/python"];
+          Cmd = ["/bin/greet"];
         };
       };
     };
 
     # Create apps that are runnable with `nix run .#<app>`
-    apps.x86_64-linux =
-      lib.mapAttrs' (
-        name: _:
-          lib.nameValuePair (lib.removeSuffix ".py" name) (
-            let
-              appName = lib.removeSuffix ".py" name;
-            in {
-              type = "app";
-              program = "${makePatchedScript appName}/bin/${appName}";
-              meta = {
-                name = appName;
-                description = "Python script ${appName} from moscripts";
-              };
-            }
-          )
-      )
-      appFiles;
+    apps.x86_64-linux = lib.genAttrs appNames makeApp;
 
     devShells.x86_64-linux = {
       # It is of course perfectly OK to keep using an impure virtualenv workflow and only use uv2nix to build packages.
