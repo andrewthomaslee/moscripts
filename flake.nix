@@ -119,7 +119,7 @@
 
     makeDockerImage = appName: imageName:
       pkgs.dockerTools.buildLayeredImage {
-        name = "moscripts-${imageName}";
+        name = "${imageName}";
         contents = [(makePatchedScript appName)];
         config = {
           Cmd = ["/bin/${appName}"];
@@ -163,25 +163,25 @@
 
     virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-env" workspace.deps.all;
   in {
-    # Create a bundled package with all apps as direct executable scripts
+    # Create individual packages for each app and their container variants
     packages.x86_64-linux = let
-      basePackages = {
-        default = pkgs.symlinkJoin {
-          name = "moscripts-bundled-apps";
-          paths = map makePatchedScript appNames;
-          meta = {
-            description = "Bundled moscripts applications";
-            longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
-          };
-        };
-      };
+      # Standalone packages (named after the app)
       standalonePackages = lib.genAttrs appNames makeStandalonePackage;
-      linuxPackages =
+
+      # Container packages (directly generated with correct names)
+      containerPackages =
         if pkgs.stdenv.isLinux
-        then (lib.genAttrs appNames (appName: makeDockerImage appName "${appName}-container"))
+        then
+          lib.foldl' (acc: appName:
+            acc
+            // {
+              "${appName}-container" = makeDockerImage appName "${appName}-container";
+            })
+          {}
+          appNames
         else {};
     in
-      basePackages // standalonePackages // linuxPackages;
+      standalonePackages // containerPackages;
 
     # Create apps that are runnable with `nix run .#<app>`
     apps.x86_64-linux = lib.genAttrs appNames makeApp;
