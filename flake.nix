@@ -37,7 +37,6 @@
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
     python = pkgs.python313;
-    stdenv = pkgs.stdenv;
 
     # Workspace and package setup
     workspace = uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;};
@@ -67,7 +66,7 @@
                 in
                   (old.tests or {})
                   // {
-                    pytest = stdenv.mkDerivation {
+                    pytest = pkgs.stdenv.mkDerivation {
                       name = "${final.moscripts.name}-pytest";
                       inherit (final.moscripts) src;
                       nativeBuildInputs = [virtualenv];
@@ -185,6 +184,8 @@
           };
         shellHook = ''
           unset PYTHONPATH
+          uv sync
+          source .venv/bin/activate
         '';
       };
 
