@@ -1,2 +1,2 @@
-def main() -> None:
-    print("Hello from development-scripts!")
+def greet() -> None:
+    print("Hello from moscripts!")
