@@ -8,7 +8,6 @@ def test_greet(capsys):
     assert captured.err == ""
 
 def test_hello(capsys):
-    subprocess.run(["./apps/hello.py"])
-    captured = capsys.readouterr()
-    assert captured.out == "Hello from moscripts hello app!\n"
-    assert captured.err == ""
+    result = subprocess.run(["./apps/hello.py"], capture_output=True, text=True)
+    assert result.stdout == "Hello from moscripts hello app!\n"
+    assert result.stderr == ""
