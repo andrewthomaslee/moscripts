@@ -49,48 +49,47 @@
       inherit python;
     };
 
-    pytestOverlay = final: prev: {
-      moscripts = prev.moscripts.overrideAttrs (old: {
-        passthru =
-          (old.passthru or {})
-          // {
-            tests = let
-              virtualenv = final.mkVirtualEnv "moscripts-pytest-env" {
-                moscripts = ["dev"];
-              };
-            in
-              (old.tests or {})
-              // {
-                pytest = pkgs.stdenv.mkDerivation {
-                  name = "${final.moscripts.name}-pytest";
-                  inherit (final.moscripts) src;
-                  nativeBuildInputs = [virtualenv];
-                  dontConfigure = true;
-                  buildPhase = ''
-                    runHook preBuild
-                    pytest --junit-xml=pytest.xml
-                    runHook postBuild
-                  '';
-                  installPhase = ''
-                    runHook preInstall
-                    mv pytest.xml $out
-                    runHook postInstall
-                  '';
-                };
-              };
-          };
-      });
-    };
-
     pythonSet = baseSet.overrideScope (
       lib.composeManyExtensions [
         pyproject-build-systems.overlays.default
         overlay
-        pytestOverlay
+        (final: prev: {
+          moscripts = prev.moscripts.overrideAttrs (old: {
+            passthru =
+              (old.passthru or {})
+              // {
+                tests = let
+                  virtualenv = final.mkVirtualEnv "moscripts-pytest-env" {
+                    moscripts = ["dev"];
+                  };
+                in
+                  (old.tests or {})
+                  // {
+                    pytest = pkgs.stdenv.mkDerivation {
+                      name = "${final.moscripts.name}-pytest";
+                      inherit (final.moscripts) src;
+                      nativeBuildInputs = [virtualenv];
+                      dontConfigure = true;
+                      buildPhase = ''
+                        runHook preBuild
+                        pytest --junit-xml=pytest.xml
+                        runHook postBuild
+                      '';
+                      installPhase = ''
+                        runHook preInstall
+                        mv pytest.xml $out
+                        runHook postInstall
+                      '';
+                    };
+                  };
+              };
+          });
+        })
       ]
     );
-
+    # Standard Virtual environment for running the apps
     venv = pythonSet.mkVirtualEnv "moscripts-default-env" workspace.deps.default;
+
     # Dev shell helpers
     editableOverlay = workspace.mkEditablePyprojectOverlay {
       root = "$REPO_ROOT";
@@ -106,7 +105,9 @@
               fileset = lib.fileset.unions [
                 (old.src + "/pyproject.toml")
                 (old.src + "/README.md")
-                (old.src + "/src/moscripts/__init__.py")
+                (old.src + "/src/")
+                (old.src + "/tests/")
+                (old.src + "/apps/")
               ];
             };
             nativeBuildInputs =
