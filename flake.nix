@@ -165,10 +165,39 @@
   in {
     # Create individual packages for each app and their container variants
     packages.x86_64-linux = let
+      # Helper function to create container images for bundled package
+      makeBundledDockerImage = appName: makeDockerImage appName "${appName}-container";
+
+      bundledPackages = {
+        # Standalone packages in /bin/appsName
+        default = pkgs.symlinkJoin {
+          name = "moscripts-bundled-apps";
+          paths = map makePatchedScript appNames;
+          meta = {
+            description = "Bundled moscripts applications";
+            longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
+          };
+        };
+        # Container images in a single directory
+        containers = pkgs.stdenv.mkDerivation {
+          name = "moscripts-bundled-container-apps";
+          buildCommand = ''
+            mkdir -p $out
+            ${lib.concatMapStrings (appName: ''
+                cp ${(makeBundledDockerImage appName)} $out/${appName}-container.tar.gz
+              '')
+              appNames}
+          '';
+          meta = {
+            description = "Bundled moscripts container applications";
+            longDescription = "A collection of Python scripts from the apps directory, packaged as container images in a single output directory";
+          };
+        };
+      };
       # Standalone packages (named after the app)
       standalonePackages = lib.genAttrs appNames makeStandalonePackage;
 
-      # Container packages (directly generated with correct names)
+      # Container packages (named after the app-container)
       containerPackages =
         if pkgs.stdenv.isLinux
         then
@@ -181,7 +210,7 @@
           appNames
         else {};
     in
-      standalonePackages // containerPackages;
+      bundledPackages // standalonePackages // containerPackages;
 
     # Create apps that are runnable with `nix run .#<app>`
     apps.x86_64-linux = lib.genAttrs appNames makeApp;
