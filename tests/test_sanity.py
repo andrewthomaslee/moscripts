@@ -1,5 +1,10 @@
 import subprocess
+import sys
+from pathlib import Path
 import moscripts
+
+test_dir = Path(__file__).parent
+app_dir = test_dir.parent / "apps"
 
 def test_greet(capsys):
     moscripts.greet()
@@ -8,6 +13,6 @@ def test_greet(capsys):
     assert captured.err == ""
 
 def test_hello(capsys):
-    result = subprocess.run(["./apps/hello.py"], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, str( app_dir / "hello")], capture_output=True, text=True)
     assert result.stdout == "Hello from moscripts hello app!\n"
     assert result.stderr == ""
