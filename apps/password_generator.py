@@ -1,9 +1,4 @@
-# /// script
-# requires-python = ">=3.13"
-# dependencies = [
-#     "typer",
-# ]
-# ///
+#!/usr/bin/env python3
 
 from typing import LiteralString
 import string
