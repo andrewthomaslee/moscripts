@@ -78,9 +78,6 @@
               old.passthru
               // {
                 # Put all tests in the passthru.tests attribute set.
-                # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
-                #
-                # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
                 tests = let
                   # Construct a virtual environment with only the test dependency-group enabled for testing.
                   virtualenv = final.mkVirtualEnv "moscripts-pytest-env" {
@@ -94,15 +91,12 @@
                       inherit (final.moscripts) src;
                       nativeBuildInputs = [virtualenv];
                       dontConfigure = true;
-
-                      # Because this package is running tests, and not actually building the main package
-                      # the build phase is running the tests.
+                      # the build phase runs the tests.
                       buildPhase = ''
                         runHook preBuild
                         pytest --junit-xml=pytest.xml
                         runHook postBuild
                       '';
-
                       # Install the test output
                       installPhase = ''
                         runHook preInstall
@@ -145,7 +139,6 @@
             pyprojectOverrides
           ]
         );
-
         # Editable Python set for development
         editable = baseSet.overrideScope (
           lib.composeManyExtensions [
@@ -197,7 +190,7 @@
           };
         };
         # Container images in a single directory
-        containerBundle = pkgs.stdenv.mkDerivation {
+        bundledContainers = pkgs.stdenv.mkDerivation {
           name = "moscripts-bundled-container-apps";
           buildCommand = ''
             mkdir -p $out
