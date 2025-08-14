@@ -25,6 +25,7 @@
   };
 
   outputs = {
+    self,
     nixpkgs,
     uv2nix,
     pyproject-nix,
@@ -36,7 +37,7 @@
     inherit (lib) filterAttrs hasSuffix;
 
     # Create attrset for each system
-    forEachSystem = nixpkgs.lib.genAttrs (import systems);
+    forAllSystems = lib.genAttrs (import systems);
 
     # App discovery and creation
     appsBasedir = ./apps;
@@ -53,64 +54,70 @@
       patchShebangs $out/bin/${appName}
     '';
 
-    # Focused helper function to build Python package set for a system
-    buildPythonSet = system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      python = pkgs.python313;
-      workspace = uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;};
-      overlay = workspace.mkPyprojectOverlay {sourcePreference = "wheel";};
-      baseSet = pkgs.callPackage pyproject-nix.build.packages {inherit python;};
-    in
-      baseSet.overrideScope (
-        lib.composeManyExtensions [
-          pyproject-build-systems.overlays.default
-          overlay
-          # add pytest overlay as a passthru to run tests after build
-          (final: prev: {
-            moscripts = prev.moscripts.overrideAttrs (old: {
-              passthru =
-                (old.passthru or {})
-                // {
-                  tests = let
-                    virtualenv = final.mkVirtualEnv "moscripts-pytest-env" {
-                      moscripts = ["dev"];
-                    };
-                  in
-                    (old.tests or {})
-                    // {
-                      pytest = pkgs.stdenv.mkDerivation {
-                        name = "${final.moscripts.name}-pytest";
-                        inherit (final.moscripts) src;
-                        nativeBuildInputs = [virtualenv];
-                        dontConfigure = true;
-                        buildPhase = ''
-                          runHook preBuild
-                          pytest --junit-xml=pytest.xml
-                          runHook postBuild
-                        '';
-                        installPhase = ''
-                          runHook preInstall
-                          mv pytest.xml $out
-                          runHook postInstall
-                        '';
-                      };
-                    };
-                };
-            });
-          })
-        ]
-      );
+    # use uv2nix to load workspace and discover pyproject.toml
+    workspace = uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;};
 
-    # Helper to build editable Python set for development
-    buildEditablePythonSet = system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      workspace = uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;};
-      pythonSet = buildPythonSet system;
-      editableOverlay = workspace.mkEditablePyprojectOverlay {root = "$REPO_ROOT";};
-    in
-      pythonSet.overrideScope (
-        lib.composeManyExtensions [
-          editableOverlay
+    overlay = workspace.mkPyprojectOverlay {
+      sourcePreference = "wheel";
+    };
+
+    # Python sets grouped per system
+    pythonSets = forAllSystems (
+      system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+        inherit (pkgs) stdenv;
+
+        baseSet = pkgs.callPackage pyproject-nix.build.packages {
+          python = pkgs.python313;
+        };
+
+        # An overlay of build fixups & test additions.
+        pyprojectOverrides = final: prev: {
+          moscripts = prev.moscripts.overrideAttrs (old: {
+            passthru =
+              old.passthru
+              // {
+                # Put all tests in the passthru.tests attribute set.
+                # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
+                #
+                # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
+                tests = let
+                  # Construct a virtual environment with only the test dependency-group enabled for testing.
+                  virtualenv = final.mkVirtualEnv "moscripts-pytest-env" {
+                    moscripts = ["dev"];
+                  };
+                in
+                  (old.tests or {})
+                  // {
+                    pytest = stdenv.mkDerivation {
+                      name = "${final.moscripts.name}-pytest";
+                      inherit (final.moscripts) src;
+                      nativeBuildInputs = [virtualenv];
+                      dontConfigure = true;
+
+                      # Because this package is running tests, and not actually building the main package
+                      # the build phase is running the tests.
+                      buildPhase = ''
+                        runHook preBuild
+                        pytest --junit-xml=pytest.xml
+                        runHook postBuild
+                      '';
+
+                      # Install the test output
+                      installPhase = ''
+                        runHook preInstall
+                        mv pytest.xml $out
+                        runHook postInstall
+                      '';
+                    };
+                  };
+              };
+          });
+        };
+
+        # Editable overlay for development
+        editableOverlay = lib.composeManyExtensions [
+          (workspace.mkEditablePyprojectOverlay {root = "$REPO_ROOT";})
           (final: prev: {
             moscripts = prev.moscripts.overrideAttrs (old: {
               src = lib.fileset.toSource {
@@ -128,14 +135,33 @@
                 ++ final.resolveBuildSystem {editables = [];};
             });
           })
-        ]
-      );
+        ];
+      in {
+        # Standard Python set
+        standard = baseSet.overrideScope (
+          lib.composeManyExtensions [
+            pyproject-build-systems.overlays.default
+            overlay
+            pyprojectOverrides
+          ]
+        );
+
+        # Editable Python set for development
+        editable = baseSet.overrideScope (
+          lib.composeManyExtensions [
+            pyproject-build-systems.overlays.default
+            overlay
+            pyprojectOverrides
+            editableOverlay
+          ]
+        );
+      }
+    );
   in {
     # Create individual packages for each app and their container variants
-    packages = forEachSystem (system: let
+    packages = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      python = pkgs.python313;
-      pythonSet = buildPythonSet system;
+      pythonSet = pythonSets.${system}.standard;
       venv = pythonSet.mkVirtualEnv "moscripts-default-env" (uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;}).deps.default;
 
       makePatchedScript = appName:
@@ -206,9 +232,9 @@
       bundledPackages // standalonePackages // containerPackages);
 
     # Create apps that are runnable with `nix run .#<app>`
-    apps = forEachSystem (system: let
+    apps = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      pythonSet = buildPythonSet system;
+      pythonSet = pythonSets.${system}.standard;
       venv = pythonSet.mkVirtualEnv "moscripts-default-env" (uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;}).deps.default;
 
       makePatchedScript = appName:
@@ -225,10 +251,10 @@
     in
       lib.genAttrs appNames makeApp);
 
-    devShells = forEachSystem (system: let
+    devShells = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       python = pkgs.python313;
-      editablePythonSet = buildEditablePythonSet system;
+      editablePythonSet = pythonSets.${system}.editable;
       virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-env" (uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;}).deps.all;
     in {
       # This devShell simply adds Python and undoes the dependency leakage done by Nixpkgs Python infrastructure.
@@ -274,8 +300,8 @@
     });
 
     # Construct flake checks from Python set
-    checks = forEachSystem (system: let
-      pythonSet = buildPythonSet system;
+    checks = forAllSystems (system: let
+      pythonSet = pythonSets.${system}.standard;
     in {
       inherit (pythonSet.moscripts.passthru.tests) pytest;
     });
