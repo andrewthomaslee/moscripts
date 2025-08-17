@@ -155,7 +155,7 @@
     packages = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       pythonSet = pythonSets.${system}.standard;
-      venv = pythonSet.mkVirtualEnv "moscripts-default-env" (uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;}).deps.default;
+      venv = pythonSet.mkVirtualEnv "moscripts-default-env" workspace.deps.default;
 
       makePatchedScript = appName:
         pkgs.runCommand appName {buildInputs = [venv pkgs.uv];} (makeExecutable appName);
@@ -228,7 +228,7 @@
     apps = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       pythonSet = pythonSets.${system}.standard;
-      venv = pythonSet.mkVirtualEnv "moscripts-default-env" (uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;}).deps.default;
+      venv = pythonSet.mkVirtualEnv "moscripts-default-env" workspace.deps.default;
 
       makePatchedScript = appName:
         pkgs.runCommand appName {buildInputs = [venv];} (makeExecutable appName);
@@ -248,7 +248,7 @@
       pkgs = nixpkgs.legacyPackages.${system};
       python = pkgs.python313;
       editablePythonSet = pythonSets.${system}.editable;
-      virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-env" (uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;}).deps.all;
+      virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-env" workspace.deps.all;
     in {
       # This devShell simply adds Python and undoes the dependency leakage done by Nixpkgs Python infrastructure.
       impure = pkgs.mkShell {

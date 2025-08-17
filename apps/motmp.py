@@ -137,7 +137,11 @@ def motmp(
 
     if scan:
         motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(directory)
-        secho(f"🔎 Found {len(motmp_files)} MOTMP files.", fg=colors.YELLOW)
+        if len(motmp_files) > 0:
+            secho(f"🔎 Found {len(motmp_files)} MOTMP files.", fg=colors.YELLOW)
+        else:
+            secho("🔎 Found no MOTMP files.", fg=colors.YELLOW)
+            raise Exit(0)
         print(motmp_files)
         if confirm("🗑️ Wipe files?", default=True):
             wipe_motmp(motmp_files)
@@ -148,7 +152,7 @@ def motmp(
     motmp_file: Path = create_motmp(directory)
     assert motmp_file.exists(), "Failed to create MOTMP file."
     try:
-        secho(f"🚀 Launching {motmp_file}", fg=colors.YELLOW)
+        secho(f"🚀 Launching {motmp_file}", fg=colors.BRIGHT_GREEN)
         launch_motmp(motmp_file, venv)
     except Exception as e:
         secho(f"Failed to launch {motmp_file}: {e}", fg=colors.RED, err=True)
