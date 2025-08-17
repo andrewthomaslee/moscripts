@@ -79,7 +79,7 @@ def wipe_motmp(motmp_files: Iterable[tuple[Path, Path | None]]) -> None:
 
 def create_motmp(directory: Path = MOTMP) -> Path:
     """Creates a new MOTMP file."""
-    file_name: str = f"motmp{uuid4()}.py".replace("-", "_")
+    file_name: str = f"motmp_{uuid4()}.py".replace("-", "_")
     motmp_file: Path = Path(directory) / file_name
     try:
         motmp_file.touch(mode=0o644)
@@ -119,6 +119,10 @@ def motmp(
 ) -> None:
     """Create and edit temp marimo notebooks."""
 
+    if not directory.exists():
+        secho(f"🚨 Directory not found at {directory}", fg=colors.RED)
+        raise Exit(1)
+
     if not MOTMP.exists():
         try:
             init_motmp()
@@ -126,12 +130,19 @@ def motmp(
             secho(f"Failed to initialize motmp: {e}", fg=colors.RED, err=True)
             raise e
 
+    if not venv.exists():
+        secho(f"🚨 Virtual environment not found at {venv}", fg=colors.RED)
+        raise Exit(1)
+        
+
     if scan:
         motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(directory)
         secho(f"🔎 Found {len(motmp_files)} MOTMP files.", fg=colors.YELLOW)
         print(motmp_files)
-        if confirm("🗑️ Wipe files?", default=False):
+        if confirm("🗑️ Wipe files?", default=True):
             wipe_motmp(motmp_files)
+        
+        raise Exit(0)
 
 
     motmp_file: Path = create_motmp(directory)

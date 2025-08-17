@@ -158,7 +158,7 @@
       venv = pythonSet.mkVirtualEnv "moscripts-default-env" (uv2nix.lib.workspace.loadWorkspace {workspaceRoot = ./.;}).deps.default;
 
       makePatchedScript = appName:
-        pkgs.runCommand appName {buildInputs = [venv];} (makeExecutable appName);
+        pkgs.runCommand appName {buildInputs = [venv pkgs.uv];} (makeExecutable appName);
 
       makeDockerImage = appName: imageName:
         pkgs.dockerTools.buildLayeredImage {
