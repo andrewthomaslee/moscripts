@@ -47,13 +47,11 @@
     appNames = lib.mapAttrsToList (name: _: lib.removeSuffix ".py" name) appFiles;
 
     # Shared build logic for creating executable scripts
-    makeExecutable = appName: let
-      dashedAppName = lib.replaceStrings ["_"] ["-"] appName;
-    in ''
+    makeExecutable = appName: ''
       mkdir -p $out/bin
-      cp ${appsBasedir}/${appName}.py $out/bin/${dashedAppName}
-      chmod +x $out/bin/${dashedAppName}
-      patchShebangs $out/bin/${dashedAppName}
+      cp ${appsBasedir}/${appName}.py $out/bin/${appName}
+      chmod +x $out/bin/${appName}
+      patchShebangs $out/bin/${appName}
     '';
 
     # use uv2nix to load workspace and discover pyproject.toml

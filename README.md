@@ -18,7 +18,7 @@ nix flake show github:andrewthomaslee/moscripts
 ## Usage
 To run apps:
 ```bash
-nix run github:andrewthomaslee/moscripts#greet
+nix run github:andrewthomaslee/moscripts#motmp
 ```
 To build package:
 ```bash
@@ -27,4 +27,17 @@ nix build github:andrewthomaslee/moscripts
 To build docker image:
 ```bash
 nix build github:andrewthomaslee/moscripts#packages.x86_64-linux.greet-container
+```
+
+
+# Apps
+## motmp
+MOTMP is a simple CLI that allows you to create and edit temporary marimo notbook files with a managed virtual environment.
+```bash
+nix run github:andrewthomaslee/moscripts#motmp -- --help
+```
+## mpv-playlists
+Launches mpv with a playlist.
+```bash
+nix run github:andrewthomaslee/moscripts#mpv_playlists -- --help
 ```
