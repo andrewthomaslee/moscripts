@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import subprocess
+from pathlib import Path
 
 
 
@@ -39,11 +40,18 @@ def create_human_readable_timestamp(
 
 def nix_run_prefix(command:str)-> tuple[str]:
     """Returns the prefix for nix commands."""
+    return (str(which_nix()), "run", f"nixpkgs#{command}", "--")
+
+
+def which_nix() -> Path:
+    """Returns the path to the nix executable."""
     result = subprocess.run(
-        ["nix", "--version"],
+        ["which", "nix"],
         capture_output=True,
         text=True,
     )
     assert result.returncode == 0, "Nix not found. Please install it."
+    nix: Path = Path(result.stdout.strip())
+    assert nix.exists(), "Nix not found. Please install it."
+    return nix
 
-    return ("nix", "run", f"nixpkgs#{command}", "--")
