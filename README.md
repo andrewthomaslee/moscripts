@@ -36,8 +36,18 @@ MOTMP is a simple CLI that allows you to create and edit temporary marimo notboo
 ```bash
 nix run github:andrewthomaslee/moscripts#motmp -- --help
 ```
-## mpv-playlists
+## mpv_playlists
 Launches mpv with a playlist.
 ```bash
 nix run github:andrewthomaslee/moscripts#mpv_playlists -- --help
+```
+## password_generator
+A secure, customizable password generator.
+```bash
+nix run github:andrewthomaslee/moscripts#password_generator -- --help
+```
+## human_timestamp
+A simple human-readable timestamp.
+```bash
+nix run github:andrewthomaslee/moscripts#human_timestamp -- --help
 ```
