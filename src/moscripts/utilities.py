@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
+import subprocess
 
 
 
@@ -33,3 +34,16 @@ def create_human_readable_timestamp(
     local_dt: datetime = source_dt.astimezone(display_tz)
 
     return local_dt.strftime(fmt)
+
+
+
+def nix_run_prefix(command:str)-> tuple[str]:
+    """Returns the prefix for nix commands."""
+    result = subprocess.run(
+        ["nix", "--version"],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, "Nix not found. Please install it."
+
+    return ("nix", "run", f"nixpkgs#{command}", "--")
