@@ -47,11 +47,13 @@
     appNames = lib.mapAttrsToList (name: _: lib.removeSuffix ".py" name) appFiles;
 
     # Shared build logic for creating executable scripts
-    makeExecutable = appName: ''
+    makeExecutable = appName: let
+      dashedAppName = lib.replaceStrings ["_"] ["-"] appName;
+    in ''
       mkdir -p $out/bin
-      cp ${appsBasedir}/${appName}.py $out/bin/${appName}
-      chmod +x $out/bin/${appName}
-      patchShebangs $out/bin/${appName}
+      cp ${appsBasedir}/${appName}.py $out/bin/${dashedAppName}
+      chmod +x $out/bin/${dashedAppName}
+      patchShebangs $out/bin/${dashedAppName}
     '';
 
     # use uv2nix to load workspace and discover pyproject.toml
@@ -155,7 +157,7 @@
     packages = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       pythonSet = pythonSets.${system}.standard;
-      venv = pythonSet.mkVirtualEnv "moscripts-default-env" workspace.deps.default;
+      venv = pythonSet.mkVirtualEnv "moscripts-venv" workspace.deps.default;
 
       makePatchedScript = appName:
         pkgs.runCommand appName {buildInputs = [venv];} (makeExecutable appName);
@@ -228,7 +230,7 @@
     apps = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       pythonSet = pythonSets.${system}.standard;
-      venv = pythonSet.mkVirtualEnv "moscripts-default-env" workspace.deps.default;
+      venv = pythonSet.mkVirtualEnv "moscripts-venv" workspace.deps.default;
 
       makePatchedScript = appName:
         pkgs.runCommand appName {buildInputs = [venv];} (makeExecutable appName);
@@ -248,7 +250,7 @@
       pkgs = nixpkgs.legacyPackages.${system};
       python = pkgs.python313;
       editablePythonSet = pythonSets.${system}.editable;
-      virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-env" workspace.deps.all;
+      virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-venv" workspace.deps.all;
     in {
       # This devShell simply adds Python and undoes the dependency leakage done by Nixpkgs Python infrastructure.
       impure = pkgs.mkShell {

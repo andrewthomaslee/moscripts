@@ -30,10 +30,11 @@ app = Typer(add_completion=False)
 def mpv_playlists(
     playlist: Path = Argument(playlists[0],help="Playlist name."),
     scan: bool = Option(False, help="Scan the directory for playlists."),
+    shuffle: bool = Option(True, help="Shuffle the playlist."),
 ):
     """Launches mpv with a playlist."""
     if scan:
-        secho(f"🔎 Found {len(playlists)} playlists.", fg=colors.BRIGHT_CYAN)
+        secho(f"🔎 Found {len(playlists)} Playlists.", fg=colors.BRIGHT_CYAN)
         choices: list[tuple[int,str]] = [
             (i,str(playlist.stem))
             for i,playlist in enumerate(playlists)
@@ -46,7 +47,7 @@ def mpv_playlists(
 
     secho(f"🎵 Launching {playlist}", fg=colors.BRIGHT_GREEN)
     mpv_cmd_prefix: tuple[str] = nix_run_prefix("mpv")
-    mpv_cmd_options: tuple[str] = ("mpv", "--loop-playlist", "--no-video", "--shuffle" )
+    mpv_cmd_options: tuple[str] = ("--loop-playlist", "--no-video", "--shuffle" ) if shuffle else ("--loop-playlist", "--no-video")
     cmd: tuple[str] = (
         *mpv_cmd_prefix,
         *mpv_cmd_options,
@@ -54,7 +55,7 @@ def mpv_playlists(
     )
     print(cmd)
     try:
-        os.execv(cmd[0], cmd)
+        os.execv(mpv_cmd_prefix[0], cmd)
     except Exception as e:
         secho(f"Failed to launch {playlist}: {e}", fg=colors.RED, err=True)
         raise e

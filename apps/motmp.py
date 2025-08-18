@@ -11,33 +11,37 @@ from typing import Iterable
 from typer import Argument, Exit, Option, Typer, colors, confirm, secho
 from rich import print
 
+# My Imports
+from moscripts.utilities import nix_run_prefix
+
 # Globals
 HOME = Path.home()
 MOTMP = HOME / ".cache" / "marimo" / "motmp"
 VENV = MOTMP / ".venv"
 
+uv_cmd_prefix: tuple[str] = nix_run_prefix("uv")
 
 def init_motmp() -> None:
     """Initializes a virtual environment for MOTMP and build file structure."""
-    secho("Initializing motmp...", fg=colors.YELLOW)
+    secho("Initializing MOTMP...", fg=colors.BRIGHT_GREEN)
     assert HOME.exists(), "Home directory does not exist."
 
     if not MOTMP.exists():
         MOTMP.mkdir(parents=True, exist_ok=True)
-        secho(f"Created {MOTMP}", fg=colors.GREEN)
+        secho(f"Created {MOTMP}", fg=colors.BRIGHT_GREEN)
 
     
     if not VENV.exists():
-        secho(f"Virtual environment not found at {VENV}", fg=colors.YELLOW)
-        if confirm("Create virtual environment?", default=True):
+        secho(f"VENV not found at {VENV}", fg=colors.YELLOW)
+        if confirm("Create VENV?", default=True):
             try:
                 subprocess.run(
-                    ["uv", "init", "--bare", "--name", "motmp"],
+                    [*uv_cmd_prefix, "init", "--bare", "--name", "motmp"],
                     check=True,
                     cwd=MOTMP,
                 )
                 subprocess.run(
-                    ["uv", "add", "marimo[recommended]", "python-lsp-server", "websockets", "watchdog"],
+                    [*uv_cmd_prefix, "add", "marimo[recommended]", "python-lsp-server", "websockets", "watchdog"],
                     check=True,
                     cwd=MOTMP,
                 )
@@ -47,7 +51,7 @@ def init_motmp() -> None:
         else:
             secho("womp womp", fg=colors.RED)
             raise Exit(1)
-    secho("🎉 Setup MOTMP complete.", fg=colors.GREEN)
+    secho("🎉 Setup complete.", fg=colors.GREEN)
 
 
 def scan_motmp(directory: Path = MOTMP) -> Iterable[tuple[Path, Path | None]]:
@@ -101,27 +105,34 @@ def launch_motmp(motmp_file: Path, venv: Path = VENV) -> None:
         str(motmp_file),
         "--no-token",
     ]
-    print("Command:  ", cmd)
+    print(cmd)
     try:
         os.execv(str(marimo_executable), cmd)
     except Exception as e:
         secho(f"Failed to launch {motmp_file}: {e}", fg=colors.RED, err=True)
-        raise e
+        raise e 
+
+
+def validate_motmp_file(destination: Path) -> Path:
+    """Validates a MOTMP file. Returns the validated file path."""
+    assert destination.exists(), "Destination not found."
+    if destination.is_dir():
+        return create_motmp(destination)
+    elif destination.is_file():
+        assert destination.suffix == ".py", "Destination must be a Python file."
+        return destination
 
 
 app = Typer(add_completion=False)
 
+
 @app.command()
 def motmp(
-    directory: Path = Argument(MOTMP, help="Location to place MOTMP files."),
+    destination: Path = Argument(MOTMP, help="Location to place MOTMP file or a MOTMP file to launch."),
     venv: Path = Option(VENV, help="Location of the virtual environment."),
     scan: bool = Option(False, help="Scan the directory for MOTMP files."),
 ) -> None:
     """Create and edit temp marimo notebooks."""
-
-    if not directory.exists():
-        secho(f"🚨 Directory not found at {directory}", fg=colors.RED)
-        raise Exit(1)
 
     if not MOTMP.exists():
         try:
@@ -129,14 +140,15 @@ def motmp(
         except Exception as e:
             secho(f"Failed to initialize motmp: {e}", fg=colors.RED, err=True)
             raise e
-
+    
     if not venv.exists():
         secho(f"🚨 Virtual environment not found at {venv}", fg=colors.RED)
         raise Exit(1)
-        
 
-    if scan:
-        motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(directory)
+    motmp_file: Path = validate_motmp_file(destination)
+
+    if scan and destination.is_dir():
+        motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(destination)
         if len(motmp_files) > 0:
             secho(f"🔎 Found {len(motmp_files)} MOTMP files.", fg=colors.YELLOW)
         else:
@@ -147,9 +159,11 @@ def motmp(
             wipe_motmp(motmp_files)
         
         raise Exit(0)
+    elif scan and destination.is_file():
+        secho("🚨 Cannot scan a file. Please specify a directory.", fg=colors.RED)
+        raise Exit(1)
 
 
-    motmp_file: Path = create_motmp(directory)
     assert motmp_file.exists(), "Failed to create MOTMP file."
     try:
         secho(f"🚀 Launching {motmp_file}", fg=colors.BRIGHT_GREEN)
