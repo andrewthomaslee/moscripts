@@ -2,17 +2,14 @@
 
 # Standard Library
 import os
-import subprocess
-from uuid import uuid4
 from pathlib import Path
-from typing import Iterable
 
 # Third Party
-from typer import Argument, Exit, Option, Typer, colors, confirm, prompt, secho
+from typer import Argument, Option, Typer, colors, prompt, secho
 from rich import print
 
 # My Imports
-from moscripts.utilities import create_human_readable_timestamp, nix_run_prefix
+from moscripts.utilities import nix_run_prefix
 
 # Globals
 HOME: Path = Path.home()

@@ -133,20 +133,19 @@ def motmp(
     scan: bool = Option(False, help="Scan the directory for MOTMP files."),
 ) -> None:
     """Create and edit temp marimo notebooks."""
-
+    # Validate destination and venv
+    assert destination.exists(), f"Destination not found. {destination}"
     if not MOTMP.exists():
         try:
             init_motmp()
         except Exception as e:
             secho(f"Failed to initialize motmp: {e}", fg=colors.RED, err=True)
             raise e
-    
     if not venv.exists():
         secho(f"🚨 Virtual environment not found at {venv}", fg=colors.RED)
         raise Exit(1)
 
-    motmp_file: Path = validate_motmp_file(destination)
-
+    # Scan for MOTMP files
     if scan and destination.is_dir():
         motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(destination)
         if len(motmp_files) > 0:
@@ -164,6 +163,8 @@ def motmp(
         raise Exit(1)
 
 
+    # Validate MOTMP file and launch
+    motmp_file: Path = validate_motmp_file(destination)
     assert motmp_file.exists(), "Failed to create MOTMP file."
     try:
         secho(f"🚀 Launching {motmp_file}", fg=colors.BRIGHT_GREEN)
