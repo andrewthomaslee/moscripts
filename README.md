@@ -40,6 +40,7 @@ MOTMP is a simple CLI that allows you to create and edit temporary marimo notboo
 nix run github:andrewthomaslee/moscripts#motmp -- --help
 ```
 ![MOTMP Help](screenshots/motmp--help.png)
+![MOTMP Example](screenshots/motmp--run.png)
 
 
 ## mpv_playlists
