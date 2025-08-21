@@ -20,13 +20,13 @@ To run apps:
 ```bash
 nix run github:andrewthomaslee/moscripts#motmp
 ```
-To build package:
+To build package ( recommended ):
 ```bash
 nix build github:andrewthomaslee/moscripts
 ```
 To build docker image:
 ```bash
-nix build github:andrewthomaslee/moscripts#packages.x86_64-linux.greet-container
+nix build .#password_generator-container
 ```
 
 

@@ -163,7 +163,7 @@
       makeDockerImage = appName: imageName:
         pkgs.dockerTools.buildLayeredImage {
           name = "${imageName}";
-          contents = [(makePatchedScript appName)];
+          contents = [(makePatchedScript appName) pkgs.which pkgs.nix];
           config = {
             Cmd = ["/bin/${appName}"];
           };
