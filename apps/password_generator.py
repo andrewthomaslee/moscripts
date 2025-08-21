@@ -97,6 +97,11 @@ def generate(
         help="Use a custom set of characters, ignoring other character type flags.",
         show_default=False,
     ),
+    cli: bool = typer.Option(
+        False,
+        help="Print just the password",
+        show_default=False,
+    ),
 ) -> None:
     """Generates a secure random password and prints it to the console."""
     character_set_parts: list[str] = []
@@ -118,7 +123,10 @@ def generate(
 
         character_set = "".join(character_set_parts)
 
-    try:
+    if cli:
+        password: str = generate_random_password(length, character_set)
+        typer.secho(password, fg=typer.colors.GREEN, bold=True)
+    else:
         password: str = generate_random_password(length, character_set)
         typer.secho("Generated Password:", fg=typer.colors.BRIGHT_CYAN, bold=True)
         typer.secho(f"{length=}", fg=typer.colors.CYAN)
@@ -126,9 +134,7 @@ def generate(
         typer.secho("---", fg=typer.colors.YELLOW)
         typer.secho(password, fg=typer.colors.GREEN, bold=True)
         typer.secho("---", fg=typer.colors.YELLOW)
-    except ValueError as e:
-        typer.secho(f"Error: {e}", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
+
 
 
 if __name__ == "__main__":

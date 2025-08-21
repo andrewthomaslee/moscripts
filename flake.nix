@@ -89,7 +89,7 @@
                     pytest = stdenv.mkDerivation {
                       name = "${final.moscripts.name}-pytest";
                       inherit (final.moscripts) src;
-                      nativeBuildInputs = [virtualenv];
+                      nativeBuildInputs = [virtualenv pkgs.which pkgs.nix];
                       dontConfigure = true;
                       # the build phase runs the tests.
                       buildPhase = ''
@@ -273,7 +273,7 @@
       };
 
       # This devShell uses uv2nix to construct a virtual environment purely from Nix, using the same dependency specification as the application.
-      uv2nix = pkgs.mkShell {
+      default = pkgs.mkShell {
         buildInputs = [pkgs.bashInteractive];
         packages = [
           virtualenvDev

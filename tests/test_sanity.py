@@ -15,7 +15,9 @@ def test_greet(capsys):
     assert result.stdout == "Hello from moscripts!\n"
     assert result.stderr == ""
 
-def test_hello(capsys):
+def test_hello():
     result = subprocess.run([sys.executable, str( app_dir / "hello.py")], capture_output=True, text=True)
     assert result.stdout == "Hello from moscripts hello app!\n"
     assert result.stderr == ""
+
+
