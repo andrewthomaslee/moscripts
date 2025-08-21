@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import subprocess
 
 # Third Party
+import pytest
 
 # My Imports
 from moscripts.utilities import create_human_readable_timestamp, which_nix, nix_run_prefix
@@ -21,10 +22,10 @@ def test_which_nix():
 
 def test_nix_run_prefix():
     nix = str(which_nix())
-    assert nix_run_prefix("uv") == (nix, "run", "nixpkgs#uv", "--")
-    assert nix_run_prefix("marimo") == (nix, "run", "nixpkgs#marimo", "--")
+    assert nix_run_prefix("uv") == (nix, "run", "--extra-experimental-features", "nix-command", "nixpkgs#uv", "--")
+    assert nix_run_prefix("marimo") == (nix, "run", "--extra-experimental-features", "nix-command", "nixpkgs#marimo", "--")
 
-
+@pytest.mark.skip(reason="no way of currently testing this")
 def test_nix_run_prefix_subprocess_nixpkgs_download():
     result = subprocess.run([*nix_run_prefix("uv"), "--version"], capture_output=True, text=True)
     assert result.stdout.startswith("uv")

@@ -40,7 +40,7 @@ def create_human_readable_timestamp(
 
 def nix_run_prefix(command:str)-> tuple[str]:
     """Returns the prefix for nix commands."""
-    return (str(which_nix()), "run", f"nixpkgs#{command}", "--")
+    return (str(which_nix()), "run", "--extra-experimental-features", "nix-command", f"nixpkgs#{command}", "--")
 
 
 def which_nix() -> Path:
