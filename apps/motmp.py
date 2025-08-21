@@ -238,10 +238,10 @@ def motmp(
     secho(f"Using venv=`{str(venv)}`", fg=colors.BRIGHT_MAGENTA)
 
     if prev:
-        motmp_file: Path = Path(
+        motmp_file: Path = validate_motmp_file(Path(
             destination
             / str(list(sort_motmp_files(scan_motmp(destination)).keys())[prev] + ".py")
-        )
+        ))
     else:
         motmp_file: Path = validate_motmp_file(destination)
 
