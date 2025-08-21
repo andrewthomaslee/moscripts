@@ -136,6 +136,5 @@ def generate(
         typer.secho("---", fg=typer.colors.YELLOW)
 
 
-
 if __name__ == "__main__":
     app()

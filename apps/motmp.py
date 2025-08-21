@@ -224,16 +224,17 @@ def motmp(
     # Validate venv
     if venv is None:
         # Attempt to find a virtual environment
-        if (
-            confirm(f"Use .venv in cwd=`{str(CWD.stem)}`?", default=True)
-            and Path(CWD / ".venv").exists()
-        ):
-            venv = CWD / ".venv"
+        if Path(CWD / ".venv").exists():
+            venv = (
+                CWD / ".venv"
+                if confirm("Use .venv in cwd=`{CWD.stem}`?", default=True)
+                else None
+            )
     try:
         venv = validate_venv(venv)
     except Exception:
         venv = VENV
-
+    assert venv.exists(), "Failed to find virtual environment."
     secho(f"Using venv=`{str(venv)}`", fg=colors.BRIGHT_MAGENTA)
 
     if prev:
@@ -245,7 +246,7 @@ def motmp(
         motmp_file: Path = validate_motmp_file(destination)
 
     assert motmp_file.exists(), "Failed to create MOTMP file."
-    assert venv.exists(), "Failed to find virtual environment."
+
     try:
         secho(f"🚀 Launching {motmp_file}", fg=colors.BRIGHT_GREEN)
         launch_motmp(motmp_file, venv)
