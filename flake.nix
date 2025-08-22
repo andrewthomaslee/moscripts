@@ -38,7 +38,54 @@
 
     # Create attrset for each system
     forAllSystems = lib.genAttrs (import systems);
-
+    # Load all Python scripts from ./scripts directory
+    scripts =
+      lib.mapAttrs
+      (
+        name: _:
+          uv2nix.lib.scripts.loadScript {
+            script = ./scripts + "/${name}";
+          }
+      )
+      (
+        lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".py" name) (
+          builtins.readDir ./scripts
+        )
+      );
+    # Create package set for each script
+    packages' = forAllSystems (
+      system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+        inherit (pkgs) dockerTools; # Add dockerTools
+        python = pkgs.python313;
+        baseSet = pkgs.callPackage pyproject-nix.build.packages {
+          inherit python;
+        };
+        pyprojectOverrides = _final: _prev: {};
+      in
+        lib.mapAttrs (
+          name: script: let
+            overlay = script.mkOverlay {
+              sourcePreference = "wheel";
+            };
+            pythonSet = baseSet.overrideScope (
+              lib.composeManyExtensions [
+                pyproject-build-systems.overlays.default
+                overlay
+                pyprojectOverrides
+              ]
+            );
+          in
+            pkgs.writeScript script.name (
+              script.renderScript {
+                venv = script.mkVirtualEnv {
+                  inherit pythonSet;
+                };
+              }
+            )
+        )
+        scripts
+    );
     # App discovery and creation
     appsBasedir = ./apps;
     appFiles = filterAttrs (name: type: type == "regular" && hasSuffix ".py" name) (
@@ -156,73 +203,75 @@
       pkgs = nixpkgs.legacyPackages.${system};
       pythonSet = pythonSets.${system}.standard;
       venv = pythonSet.mkVirtualEnv "moscripts-venv" workspace.deps.default;
-
-      makePatchedScript = appName:
+      # alpine base docker image
+      alpine = pkgs.dockerTools.pullImage {
+        imageName = "alpine";
+        imageDigest = "sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1";
+        finalImageName = "alpine";
+        finalImageTag = "latest";
+        sha256 = "sha256-1Af8p6cYQs8sxlowz4BC6lC9eAOpNWYnIhCN7BSDKL0=";
+        os = "linux";
+        arch =
+          if system == "x86_64-linux"
+          then "amd64"
+          else if system == "aarch64-linux"
+          then "arm64"
+          else system;
+      };
+      #----StandAloneScripts----#
+      scriptsPackages = lib.mapAttrs' (name: drv: lib.nameValuePair (lib.removeSuffix ".py" name) drv) packages'.${system};
+      makeScript = scriptName: scriptDrv:
+        pkgs.stdenv.mkDerivation {
+          name = "${scriptName}-script";
+          buildCommand = ''
+            mkdir -p $out/bin
+            cp ${scriptDrv} $out/bin/${scriptName}
+            chmod +x $out/bin/${scriptName}
+          '';
+        };
+      makeDockerScript = scriptName: scriptDrv:
+        pkgs.dockerTools.buildLayeredImage {
+          name = "${scriptName}-container";
+          fromImage = alpine;
+          contents = [(makeScript scriptName scriptDrv) pkgs.curl pkgs.nix];
+          config = {
+            Cmd = ["/bin/${scriptName}"];
+          };
+        };
+      #----Apps----#
+      makePatchedApp = appName:
         pkgs.runCommand appName {buildInputs = [venv];} (makeExecutable appName);
 
-      makeDockerImage = appName: imageName:
+      makeDockerApp = appName: imageName:
         pkgs.dockerTools.buildLayeredImage {
           name = "${imageName}";
-          contents = [(makePatchedScript appName) pkgs.which pkgs.nix];
+          fromImage = alpine;
+          contents = [(makePatchedApp appName) pkgs.which pkgs.nix];
           config = {
             Cmd = ["/bin/${appName}"];
           };
         };
 
-      makeStandalonePackage = appName:
+      makeAppPackage = appName:
         pkgs.stdenv.mkDerivation {
           name = appName;
           buildCommand = makeExecutable appName;
           buildInputs = [venv];
         };
 
-      # Helper function to create container images for bundled package
-      makeBundledDockerImage = appName: makeDockerImage appName "${appName}-container";
-
-      bundledPackages = {
-        # Standalone packages in /bin/appsName
-        default = pkgs.symlinkJoin {
-          name = "moscripts-bundled-apps";
-          paths = map makePatchedScript appNames;
-          meta = {
-            description = "Bundled moscripts applications";
-            longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
-          };
-        };
-        # Container images in a single directory
-        bundledContainers = pkgs.stdenv.mkDerivation {
-          name = "moscripts-bundled-container-apps";
-          buildCommand = ''
-            mkdir -p $out
-            ${lib.concatMapStrings (appName: ''
-                cp ${(makeBundledDockerImage appName)} $out/${appName}-container.tar.gz
-              '')
-              appNames}
-          '';
-          meta = {
-            description = "Bundled moscripts container applications";
-            longDescription = "A collection of Python scripts from the apps directory, packaged as container images in a single output directory";
-          };
+      default = pkgs.symlinkJoin {
+        name = "moscripts-bundled-apps";
+        paths = [appsPackages scriptsPackages];
+        meta = {
+          description = "Bundled moscripts applications";
+          longDescription = "A collection of Python scripts from the apps directory, packaged as executable binaries with patched shebangs";
         };
       };
 
       # Standalone packages (named after the app)
-      standalonePackages = lib.genAttrs appNames makeStandalonePackage;
-
-      # Container packages (named after the app-container)
-      containerPackages =
-        if pkgs.stdenv.isLinux
-        then
-          lib.foldl' (acc: appName:
-            acc
-            // {
-              "${appName}-container" = makeDockerImage appName "${appName}-container";
-            })
-          {}
-          appNames
-        else {};
+      appsPackages = lib.genAttrs appNames makeAppPackage;
     in
-      bundledPackages // standalonePackages // containerPackages);
+      default // scriptsPackages // appsPackages);
 
     # Create apps that are runnable with `nix run .#<app>`
     apps = forAllSystems (system: let
@@ -241,8 +290,18 @@
           description = "Python script ${appName} from moscripts";
         };
       };
+      apps = lib.genAttrs appNames makeApp;
+      scripts =
+        lib.mapAttrs (_name: script: {
+          type = "app";
+          program = "${script}";
+          meta = {
+            description = "Run ${script.name} script";
+          };
+        })
+        self.packages.${system};
     in
-      lib.genAttrs appNames makeApp);
+      apps // scripts);
 
     devShells = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
