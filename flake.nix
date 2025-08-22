@@ -39,7 +39,7 @@
     # Create attrset for each system
     forAllSystems = lib.genAttrs (import systems);
 
-    # Load standalone Python scripts from ./scripts directory (with inline metadata)
+    # Load standalone Python scripts from ./pythonScripts directory (with inline metadata)
     loadStandaloneScripts = dir:
       lib.mapAttrs
       (name: _: uv2nix.lib.scripts.loadScript {script = dir + "/${name}";})
@@ -53,7 +53,7 @@
       (lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".py" name)
         (builtins.readDir dir));
 
-    standaloneScripts = loadStandaloneScripts ./scripts;
+    standaloneScripts = loadStandaloneScripts ./pythonScripts;
     apps = loadApps ./apps;
 
     # Create derivations for standalone scripts
@@ -389,7 +389,7 @@
           export VIRTUAL_ENV=${virtualenvDev} # Export VIRTUAL_ENV for the script
 
           # Configure VS Code
-          source ${./scripts/configure-vscode.sh}
+          source ${./shellScripts/configure-vscode.sh}
         '';
       };
     });
