@@ -342,14 +342,19 @@
       python = pkgs.python313;
       editablePythonSet = pythonSets.${system}.editable;
       virtualenvDev = editablePythonSet.mkVirtualEnv "moscripts-dev-venv" workspace.deps.all;
+      devPackages = [
+        pkgs.bash
+        pkgs.jq
+        pkgs.uv
+      ];
     in {
       # This devShell simply adds Python and undoes the dependency leakage done by Nixpkgs Python infrastructure.
       impure = pkgs.mkShell {
-        buildInputs = [pkgs.bashInteractive];
-        packages = [
-          python
-          pkgs.uv
-        ];
+        packages =
+          [
+            python
+          ]
+          ++ devPackages;
         env =
           {
             UV_PYTHON_DOWNLOADS = "never";
@@ -367,11 +372,11 @@
 
       # This devShell uses uv2nix to construct a virtual environment purely from Nix, using the same dependency specification as the application.
       default = pkgs.mkShell {
-        buildInputs = [pkgs.bashInteractive];
-        packages = [
-          virtualenvDev
-          pkgs.uv
-        ];
+        packages =
+          [
+            virtualenvDev
+          ]
+          ++ devPackages;
         env = {
           UV_NO_SYNC = "1";
           UV_PYTHON = python.interpreter;
@@ -381,6 +386,10 @@
           unset PYTHONPATH
           export REPO_ROOT=$(git rev-parse --show-toplevel)
           source ${virtualenvDev}/bin/activate
+          export VIRTUAL_ENV=${virtualenvDev} # Export VIRTUAL_ENV for the script
+
+          # Configure VS Code
+          source ${./scripts/configure-vscode.sh}
         '';
       };
     });

@@ -8,3 +8,4 @@ result
 .direnv
 .devenv
 motmp_*.py
+.vscode
