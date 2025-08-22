@@ -93,6 +93,24 @@ def sort_motmp_files(
     }
 
 
+def get_previous_file(destination: Path, index: int) -> Path:
+    """Returns the previous file in the directory."""
+    assert destination.exists(), "Destination not found."
+    assert destination.is_dir(), "Destination must be a directory."
+    motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(destination)
+    if len(motmp_files) > 0:
+        previous_files = sorted(motmp_files, key=lambda x: x[0].stat().st_ctime, reverse=True)
+        try:
+            previous_file: Path = previous_files[index][0]
+        except IndexError:
+            secho(f"🚨 Index out of range. Choose a number between 0 and {len(previous_files) - 1}. Or use `-1` for the oldest.", fg=colors.RED)
+            raise Exit(1)
+    else:
+        secho("🔎 Found no MOTMP files.", fg=colors.YELLOW)
+        raise Exit(0)
+
+
+
 def wipe_motmp(motmp_files: Iterable[tuple[Path, Path | None]]) -> None:
     """Wipes a directory of MOTMP files."""
     for motmp_file, session_file in motmp_files:
@@ -237,16 +255,14 @@ def motmp(
     assert venv.exists(), "Failed to find virtual environment."
     secho(f"Using venv=`{str(venv)}`", fg=colors.BRIGHT_MAGENTA)
 
-    if prev:
-        motmp_file: Path = validate_motmp_file(Path(
-            destination
-            / str(list(sort_motmp_files(scan_motmp(destination)).keys())[prev] + ".py")
-        ))
+    # Resolve previous file or create new file
+    if prev is not None:
+        motmp_file: Path = get_previous_file(destination, prev)
     else:
         motmp_file: Path = validate_motmp_file(destination)
 
+    # Launch MOTMP file
     assert motmp_file.exists(), "Failed to create MOTMP file."
-
     try:
         secho(f"🚀 Launching {motmp_file}", fg=colors.BRIGHT_GREEN)
         launch_motmp(motmp_file, venv)
