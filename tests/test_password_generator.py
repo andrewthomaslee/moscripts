@@ -11,12 +11,12 @@ import sys
 
 
 test_dir: Path = Path(__file__).parent
-app_dir: Path = test_dir.parent / "apps"
+pythonScripts_dir: Path = test_dir.parent / "pythonScripts"
 
 
 def test_password_generator() -> None:
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(app_dir / "password_generator.py")],
+        [sys.executable, str(pythonScripts_dir / "password_generator.py")],
         capture_output=True,
         text=True,
     )
@@ -25,7 +25,12 @@ def test_password_generator() -> None:
     assert "length=64" in result.stdout
 
     result = subprocess.run(
-        [sys.executable, str(app_dir / "password_generator.py"), "--length", "32"],
+        [
+            sys.executable,
+            str(pythonScripts_dir / "password_generator.py"),
+            "--length",
+            "32",
+        ],
         capture_output=True,
         text=True,
     )
@@ -34,7 +39,12 @@ def test_password_generator() -> None:
     assert "length=32" in result.stdout
 
     result = subprocess.run(
-        [sys.executable, str(app_dir / "password_generator.py"), "--length", "300"],
+        [
+            sys.executable,
+            str(pythonScripts_dir / "password_generator.py"),
+            "--length",
+            "300",
+        ],
         capture_output=True,
         text=True,
     )
@@ -45,7 +55,12 @@ def test_password_generator() -> None:
 
 def test_password_generator_chars() -> None:
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(app_dir / "password_generator.py"), "--custom", "a"],
+        [
+            sys.executable,
+            str(pythonScripts_dir / "password_generator.py"),
+            "--custom",
+            "a",
+        ],
         capture_output=True,
         text=True,
     )
@@ -54,7 +69,12 @@ def test_password_generator_chars() -> None:
     assert "character_set='a'" in result.stdout
 
     result = subprocess.run(
-        [sys.executable, str(app_dir / "password_generator.py"), "--custom", "@"],
+        [
+            sys.executable,
+            str(pythonScripts_dir / "password_generator.py"),
+            "--custom",
+            "@",
+        ],
         capture_output=True,
         text=True,
     )
@@ -95,7 +115,7 @@ def test_password_generator_chars() -> None:
         result = subprocess.run(
             [
                 sys.executable,
-                str(app_dir / "password_generator.py"),
+                str(pythonScripts_dir / "password_generator.py"),
                 "--no-symbols",
                 "--cli",
             ],
@@ -115,7 +135,7 @@ def test_password_generator_no_lowercase() -> None:
         result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
-                str(app_dir / "password_generator.py"),
+                str(pythonScripts_dir / "password_generator.py"),
                 "--cli",
                 "--no-lowercase",
             ],
@@ -135,7 +155,7 @@ def test_password_generator_no_uppercase() -> None:
         result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
-                str(app_dir / "password_generator.py"),
+                str(pythonScripts_dir / "password_generator.py"),
                 "--cli",
                 "--no-uppercase",
             ],
@@ -155,7 +175,7 @@ def test_password_generator_no_digits() -> None:
         result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
-                str(app_dir / "password_generator.py"),
+                str(pythonScripts_dir / "password_generator.py"),
                 "--cli",
                 "--no-digits",
             ],
@@ -171,7 +191,7 @@ def test_password_generator_length() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [
             sys.executable,
-            str(app_dir / "password_generator.py"),
+            str(pythonScripts_dir / "password_generator.py"),
             "--cli",
             "--length",
             "32",
@@ -186,7 +206,7 @@ def test_password_generator_length() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(app_dir / "password_generator.py"),
+            str(pythonScripts_dir / "password_generator.py"),
             "--cli",
         ],
         capture_output=True,

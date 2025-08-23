@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-
-
-def main():
-    print("Hello from moscripts hello app!")
-
+from moscripts import hello
 
 if __name__ == "__main__":
-    main()
+    hello()

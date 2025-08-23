@@ -7,5 +7,5 @@ HOME: Path = Path.home()
 NIX: Path = which_nix()
 
 
-def greet() -> None:
-    print("Hello from moscripts!")
+def hello() -> None:
+    print("Hello from moscripts hello app!")
