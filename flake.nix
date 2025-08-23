@@ -127,17 +127,28 @@
                       inherit (final.moscripts) src;
                       nativeBuildInputs = [virtualenv pkgs.which pkgs.nix];
                       dontConfigure = true;
-                      # the build phase runs the tests.
                       buildPhase = ''
                         runHook preBuild
-                        pytest --junit-xml=pytest.xml
+                        pytest --cov tests --cov-report html tests
                         runHook postBuild
                       '';
-                      # Install the test output
                       installPhase = ''
                         runHook preInstall
-                        mv pytest.xml $out
+                        mv htmlcov $out
                         runHook postInstall
+                      '';
+                    };
+                    pyrefly = stdenv.mkDerivation {
+                      name = "${final.moscripts.name}-pyrefly";
+                      inherit (final.moscripts) src;
+                      nativeBuildInputs = [virtualenv pkgs.which pkgs.nix];
+                      dontConfigure = true;
+                      dontInstall = true;
+                      buildPhase = ''
+                        runHook preBuild
+                        mkdir $out
+                        pyrefly check --debug-info $out/pyrefly.json --output-format json --config pyproject.toml
+                        runHook postBuild
                       '';
                     };
                   };
@@ -158,6 +169,8 @@
                   (old.src + "/src/")
                   (old.src + "/tests/")
                   (old.src + "/apps/")
+                  (old.src + "/pythonScripts/")
+                  (old.src + "/shellScripts/")
                 ];
               };
               nativeBuildInputs =
@@ -396,7 +409,7 @@
     checks = forAllSystems (system: let
       pythonSet = pythonSets.${system}.standard;
     in {
-      inherit (pythonSet.moscripts.passthru.tests) pytest;
+      inherit (pythonSet.moscripts.passthru.tests) pytest pyrefly;
     });
 
     formatter = forAllSystems (
