@@ -27,7 +27,7 @@ assert len(playlists) > 0, (
     "No playlists found. Please create at least one playlist in `~/Music/Playlists`."
 )
 
-app = Typer(add_completion=False)
+app: Typer = Typer(add_completion=False)
 
 
 @app.command()
@@ -35,7 +35,7 @@ def mpv_playlists(
     playlist: Path = Argument(playlists[0], help="Playlist name."),
     scan: bool = Option(False, help="Scan the directory for playlists."),
     shuffle: bool = Option(True, help="Shuffle the playlist."),
-):
+) -> None:
     """Launches mpv with a playlist."""
     if scan:
         secho(f"🔎 Found {len(playlists)} Playlists.", fg=colors.BRIGHT_CYAN)
@@ -49,13 +49,13 @@ def mpv_playlists(
     assert playlist in playlists, "Playlist not found."
 
     secho(f"🎵 Launching {playlist}", fg=colors.BRIGHT_GREEN)
-    mpv_cmd_prefix: tuple[str] = nix_run_prefix("mpv")
-    mpv_cmd_options: tuple[str] = (
+    mpv_cmd_prefix: tuple[str, ...] = nix_run_prefix("mpv")
+    mpv_cmd_options: tuple[str, ...] = (
         ("--loop-playlist", "--no-video", "--shuffle")
         if shuffle
         else ("--loop-playlist", "--no-video")
     )
-    cmd: tuple[str] = (
+    cmd: tuple[str, ...] = (
         *mpv_cmd_prefix,
         *mpv_cmd_options,
         str(playlist),
@@ -66,6 +66,8 @@ def mpv_playlists(
     except Exception as e:
         secho(f"Failed to launch {playlist}: {e}", fg=colors.RED, err=True)
         raise e
+    finally:
+        return None
 
 
 if __name__ == "__main__":

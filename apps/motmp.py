@@ -5,7 +5,7 @@ import os
 import subprocess
 from uuid import uuid4
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Never
 from datetime import datetime, timezone
 
 # Third Party
@@ -16,11 +16,11 @@ from rich import print
 from moscripts.utilities import nix_run_prefix
 
 # Globals
-HOME = Path.home()
-MOTMP = HOME / ".cache" / "marimo" / "motmp"
-VENV = MOTMP / ".venv"
+HOME: Path = Path.home()
+MOTMP: Path = HOME / ".cache" / "marimo" / "motmp"
+VENV: Path = MOTMP / ".venv"
 
-uv_cmd_prefix: tuple[str] = nix_run_prefix("uv")
+uv_cmd_prefix: tuple[str, ...] = nix_run_prefix("uv")
 
 
 def init_motmp() -> None:
@@ -66,10 +66,10 @@ def init_motmp() -> None:
     secho("🎉 Setup complete.", fg=colors.GREEN)
 
 
-def scan_motmp(directory: Path = MOTMP) -> Iterable[tuple[Path, Path | None]]:
+def scan_motmp(directory: Path = MOTMP) -> list[tuple[Path, Path | None]]:
     """Scans a directory for MOTMP files."""
-    SESSION = directory / "__marimo__" / "session"
-    motmp_files: Iterable[tuple[Path, Path | None]] = [
+    SESSION: Path = directory / "__marimo__" / "session"
+    motmp_files: list[tuple[Path, Path | None]] = [
         (file, SESSION / str(file.name + ".json"))
         if Path(SESSION / str(file.name + ".json")).exists()
         else (file, None)
@@ -97,18 +97,23 @@ def get_previous_file(destination: Path, index: int) -> Path:
     """Returns the previous file in the directory."""
     assert destination.exists(), "Destination not found."
     assert destination.is_dir(), "Destination must be a directory."
-    motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(destination)
+    motmp_files: list[tuple[Path, Path | None]] = scan_motmp(destination)
     if len(motmp_files) > 0:
-        previous_files = sorted(motmp_files, key=lambda x: x[0].stat().st_ctime, reverse=True)
+        previous_files: list[tuple[Path, Path | None]] = sorted(
+            motmp_files, key=lambda x: x[0].stat().st_ctime, reverse=True
+        )
         try:
             previous_file: Path = previous_files[index][0]
+            return previous_file
         except IndexError:
-            secho(f"🚨 Index out of range. Choose a number between 0 and {len(previous_files) - 1}. Or use `-1` for the oldest.", fg=colors.RED)
+            secho(
+                f"🚨 Index out of range. Choose a number between 0 and {len(previous_files) - 1}. Or use `-1` for the oldest.",
+                fg=colors.RED,
+            )
             raise Exit(1)
     else:
         secho("🔎 Found no MOTMP files.", fg=colors.YELLOW)
         raise Exit(0)
-
 
 
 def wipe_motmp(motmp_files: Iterable[tuple[Path, Path | None]]) -> None:
@@ -139,7 +144,7 @@ def create_motmp(directory: Path = MOTMP) -> Path:
     return motmp_file
 
 
-def launch_motmp(motmp_file: Path, venv: Path = VENV) -> None:
+def launch_motmp(motmp_file: Path, venv: Path = VENV) -> Never:
     """Launches a MOTMP file using a virtual environment."""
     marimo_executable: Path = venv / "bin" / "marimo"
     if not marimo_executable.exists():
@@ -167,11 +172,13 @@ def validate_motmp_file(destination: Path) -> Path:
     elif destination.is_file():
         assert destination.suffix == ".py", "Destination must be a Python file."
         return destination
+    else:
+        raise ValueError("Destination must be a file or directory.")
 
 
 def validate_venv(venv: Path, post_init: bool = False) -> Path:
     """Validates a virtual environment. Returns the validated virtual environment path or None."""
-    result = venv if venv.exists() else VENV
+    result: Path = venv if venv.exists() else VENV
     try:
         assert result.exists(), f"🚨 Virtual environment not found at {venv}"
         assert result.is_dir(), f"🚨 Virtual environment is not a directory at {venv}"
@@ -194,7 +201,7 @@ def validate_venv(venv: Path, post_init: bool = False) -> Path:
     return result
 
 
-app = Typer(add_completion=False)
+app: Typer = Typer(add_completion=False)
 
 
 @app.command()
@@ -211,20 +218,20 @@ def motmp(
         None,
         help="Launch the previous MOTMP file by index ordered by creation time. Use `0` for the newest and `-1` for the oldest.",
     ),
-) -> None:
+) -> Never:
     """Create and edit temp marimo notebooks."""
     # Try initializing MOTMP
     if not MOTMP.exists():
         init_motmp()
 
     # Sanity checks
-    CWD = Path.cwd()
+    CWD: Path = Path.cwd()
     assert CWD.exists(), f"🚨 Current working directory not found at {CWD}"
     assert destination.exists(), f"Destination not found. {destination}"
 
     # Scan for MOTMP files
     if scan and destination.is_dir():
-        motmp_files: Iterable[tuple[Path, Path | None]] = scan_motmp(destination)
+        motmp_files: list[tuple[Path, Path | None]] = scan_motmp(destination)
         if len(motmp_files) > 0:
             secho(f"🔎 Found {len(motmp_files)} MOTMP files.", fg=colors.YELLOW)
         else:
@@ -246,7 +253,7 @@ def motmp(
             venv = (
                 CWD / ".venv"
                 if confirm("Use .venv in cwd=`{CWD.stem}`?", default=True)
-                else None
+                else venv
             )
     try:
         venv = validate_venv(venv)

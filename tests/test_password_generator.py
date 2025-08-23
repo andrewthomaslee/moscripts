@@ -1,5 +1,7 @@
 # Standard Library
+from subprocess import CompletedProcess
 import subprocess
+from typing import LiteralString
 from pathlib import Path
 import sys
 
@@ -8,12 +10,12 @@ import sys
 # My Imports
 
 
-test_dir = Path(__file__).parent
-app_dir = test_dir.parent / "apps"
+test_dir: Path = Path(__file__).parent
+app_dir: Path = test_dir.parent / "apps"
 
 
-def test_password_generator():
-    result = subprocess.run(
+def test_password_generator() -> None:
+    result: CompletedProcess[str] = subprocess.run(
         [sys.executable, str(app_dir / "password_generator.py")],
         capture_output=True,
         text=True,
@@ -41,8 +43,8 @@ def test_password_generator():
     assert "length=300" in result.stdout
 
 
-def test_password_generator_chars():
-    result = subprocess.run(
+def test_password_generator_chars() -> None:
+    result: CompletedProcess[str] = subprocess.run(
         [sys.executable, str(app_dir / "password_generator.py"), "--custom", "a"],
         capture_output=True,
         text=True,
@@ -60,7 +62,7 @@ def test_password_generator_chars():
     assert result.stderr == ""
     assert "character_set='@'" in result.stdout
 
-    symbols = {
+    symbols: set[str] = {
         "@",
         "#",
         "!",
@@ -105,12 +107,12 @@ def test_password_generator_chars():
         assert all(symbol not in result.stdout.strip() for symbol in symbols)
 
 
-def test_password_generator_no_lowercase():
+def test_password_generator_no_lowercase() -> None:
     import string
 
-    lowercase_chars = string.ascii_lowercase
+    lowercase_chars: LiteralString = string.ascii_lowercase
     for _ in range(2):
-        result = subprocess.run(
+        result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
                 str(app_dir / "password_generator.py"),
@@ -125,12 +127,12 @@ def test_password_generator_no_lowercase():
         assert all(char not in result.stdout for char in lowercase_chars)
 
 
-def test_password_generator_no_uppercase():
+def test_password_generator_no_uppercase() -> None:
     import string
 
-    uppercase_chars = string.ascii_uppercase
+    uppercase_chars: LiteralString = string.ascii_uppercase
     for _ in range(2):
-        result = subprocess.run(
+        result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
                 str(app_dir / "password_generator.py"),
@@ -145,12 +147,12 @@ def test_password_generator_no_uppercase():
         assert all(char not in result.stdout.strip() for char in uppercase_chars)
 
 
-def test_password_generator_no_digits():
+def test_password_generator_no_digits() -> None:
     import string
 
-    digit_chars = string.digits
+    digit_chars: LiteralString = string.digits
     for _ in range(2):
-        result = subprocess.run(
+        result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
                 str(app_dir / "password_generator.py"),
@@ -165,8 +167,8 @@ def test_password_generator_no_digits():
         assert all(char not in result.stdout.strip() for char in digit_chars)
 
 
-def test_password_generator_length():
-    result = subprocess.run(
+def test_password_generator_length() -> None:
+    result: CompletedProcess[str] = subprocess.run(
         [
             sys.executable,
             str(app_dir / "password_generator.py"),

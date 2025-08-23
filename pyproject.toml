@@ -32,3 +32,20 @@ test = [
     "pytest-cov>=6.2.1",
     "ruff>=0.12.9",
 ]
+
+[tool.pyrefly]
+project-includes = [
+    "**/*", 
+    "**/apps/**/*", 
+    "**/tests/**/*", 
+    "**/pythonScripts/**/*", 
+    "**/src/**/*"
+]
+project-excludes = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/__marimo__",
+    "**/.direnv",
+    "**/result",
+    "**/*venv/**/*",
+]

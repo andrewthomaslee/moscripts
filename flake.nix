@@ -385,11 +385,9 @@
         shellHook = ''
           unset PYTHONPATH
           export REPO_ROOT=$(git rev-parse --show-toplevel)
+          export VIRTUAL_ENV=${virtualenvDev}
           source ${virtualenvDev}/bin/activate
-          export VIRTUAL_ENV=${virtualenvDev} # Export VIRTUAL_ENV for the script
-
-          # Configure VS Code
-          source ${./shellScripts/configure-vscode.sh}
+          source ${./shellScripts/configure-vscode.sh} # Configure VS Code
         '';
       };
     });
@@ -400,5 +398,12 @@
     in {
       inherit (pythonSet.moscripts.passthru.tests) pytest;
     });
+
+    formatter = forAllSystems (
+      system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+        pkgs.alejandra
+    );
   };
 }

@@ -1,6 +1,7 @@
 # Standard Library
 from datetime import datetime, timezone
 import subprocess
+from subprocess import CompletedProcess
 
 # Third Party
 import pytest
@@ -17,18 +18,18 @@ from moscripts.utilities import (
 # -------------------------------------UTILITIES--------------------------------------#
 
 
-def test_create_human_readable_timestamp():
+def test_create_human_readable_timestamp() -> None:
     assert create_human_readable_timestamp() == create_human_readable_timestamp(
         datetime.now(timezone.utc)
     )
 
 
-def test_which_nix():
+def test_which_nix() -> None:
     assert which_nix().exists()
 
 
-def test_nix_run_prefix():
-    nix = str(which_nix())
+def test_nix_run_prefix() -> None:
+    nix: str = str(which_nix())
     assert nix_run_prefix("uv") == (
         nix,
         "run",
@@ -48,20 +49,20 @@ def test_nix_run_prefix():
 
 
 @pytest.mark.skip(reason="no way of currently testing this")
-def test_nix_run_prefix_subprocess_nixpkgs_download():
-    result = subprocess.run(
+def test_nix_run_prefix_subprocess_nixpkgs_download() -> None:
+    result: CompletedProcess[str] = subprocess.run(
         [*nix_run_prefix("uv"), "--version"], capture_output=True, text=True
     )
     assert result.stdout.startswith("uv")
     assert result.stderr == ""
 
-    result = subprocess.run(
+    result: CompletedProcess[str] = subprocess.run(
         [*nix_run_prefix("mpv"), "--version"], capture_output=True, text=True
     )
     assert result.stdout.startswith("mpv")
     assert result.stderr == ""
 
 
-def test_which_executable():
+def test_which_executable() -> None:
     assert which_executable("which").exists()
     assert which_executable("nix").exists()

@@ -1,3 +1,4 @@
+from subprocess import CompletedProcess
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import subprocess
@@ -37,7 +38,7 @@ def create_human_readable_timestamp(
     return local_dt.strftime(fmt)
 
 
-def nix_run_prefix(command: str) -> tuple[str]:
+def nix_run_prefix(command: str) -> tuple[str, ...]:
     """Returns the prefix for nix commands."""
     return (
         str(which_nix()),
@@ -51,7 +52,7 @@ def nix_run_prefix(command: str) -> tuple[str]:
 
 def which_nix() -> Path:
     """Returns the path to the nix executable."""
-    result = subprocess.run(
+    result: CompletedProcess[str] = subprocess.run(
         ["which", "nix"],
         capture_output=True,
         text=True,
@@ -64,7 +65,7 @@ def which_nix() -> Path:
 
 def which_executable(executable: str) -> Path:
     """Returns the path to the nix executable."""
-    result = subprocess.run(
+    result: CompletedProcess[str] = subprocess.run(
         ["which", executable],
         capture_output=True,
         text=True,
