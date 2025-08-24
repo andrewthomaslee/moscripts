@@ -44,7 +44,7 @@ def nix_run_prefix(command: str) -> tuple[str, ...]:
         str(which_nix()),
         "run",
         "--extra-experimental-features",
-        "nix-command",
+        "nix-command flakes",
         f"nixpkgs#{command}",
         "--",
     )

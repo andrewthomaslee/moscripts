@@ -34,7 +34,7 @@ def test_nix_run_prefix() -> None:
         nix,
         "run",
         "--extra-experimental-features",
-        "nix-command",
+        "nix-command flakes",
         "nixpkgs#uv",
         "--",
     )
@@ -42,7 +42,7 @@ def test_nix_run_prefix() -> None:
         nix,
         "run",
         "--extra-experimental-features",
-        "nix-command",
+        "nix-command flakes",
         "nixpkgs#marimo",
         "--",
     )
