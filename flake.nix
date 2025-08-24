@@ -125,7 +125,7 @@
                     pytest = stdenv.mkDerivation {
                       name = "${final.moscripts.name}-pytest";
                       inherit (final.moscripts) src;
-                      nativeBuildInputs = [virtualenv pkgs.which pkgs.nix];
+                      nativeBuildInputs = [virtualenv pkgs.which pkgs.nix pkgs.gum];
                       dontConfigure = true;
                       buildPhase = ''
                         runHook preBuild
@@ -141,7 +141,7 @@
                     pyrefly = stdenv.mkDerivation {
                       name = "${final.moscripts.name}-pyrefly";
                       inherit (final.moscripts) src;
-                      nativeBuildInputs = [virtualenv pkgs.which pkgs.nix];
+                      nativeBuildInputs = [virtualenv pkgs.which pkgs.nix pkgs.gum];
                       dontConfigure = true;
                       dontInstall = true;
                       buildPhase = ''
@@ -231,6 +231,7 @@
               cp ${scriptDrv} $out/bin/${scriptName}
               chmod +x $out/bin/${scriptName}
             '';
+            buildInputs = [pkgs.gum];
           };
 
         # Helper to create executable apps (for apps that need moscripts venv)
@@ -243,7 +244,7 @@
               chmod +x $out/bin/${appName}
               patchShebangs $out/bin/${appName}
             '';
-            buildInputs = [venv];
+            buildInputs = [venv pkgs.gum];
           };
 
         # Helper to create docker images for standalone scripts
@@ -251,7 +252,7 @@
           pkgs.dockerTools.buildLayeredImage {
             name = "${scriptName}-container";
             fromImage = alpine;
-            contents = [(makeStandaloneExecutable scriptName scriptDrv) pkgs.curl pkgs.nix];
+            contents = [(makeStandaloneExecutable scriptName scriptDrv) pkgs.curl pkgs.nix pkgs.gum];
             config = {
               Cmd = ["/bin/${scriptName}"];
             };
@@ -262,7 +263,7 @@
           pkgs.dockerTools.buildLayeredImage {
             name = "${appName}-container";
             fromImage = alpine;
-            contents = [(makeAppExecutable appName appPath) pkgs.curl pkgs.nix];
+            contents = [(makeAppExecutable appName appPath) pkgs.curl pkgs.nix pkgs.gum];
             config = {
               Cmd = ["/bin/${appName}"];
             };

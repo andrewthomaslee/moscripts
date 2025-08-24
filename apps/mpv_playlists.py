@@ -5,11 +5,12 @@ import os
 from pathlib import Path
 
 # Third Party
-from typer import Argument, Option, Typer, colors, prompt, secho
+from typer import Argument, Option, Typer, colors, secho, Exit
 from rich import print
 
 # My Imports
 from moscripts.utilities import nix_run_prefix
+from moscripts.gum import gum_choose
 
 # Globals
 HOME: Path = Path.home()
@@ -39,12 +40,13 @@ def mpv_playlists(
     """Launches mpv with a playlist."""
     if scan:
         secho(f"🔎 Found {len(playlists)} Playlists.", fg=colors.BRIGHT_CYAN)
-        choices: list[tuple[int, str]] = [
-            (i, str(playlist.stem)) for i, playlist in enumerate(playlists)
-        ]
-        print(choices)
-        index = prompt("Select a playlist to launch", type=int, default=0)
-        playlist = playlists[index]
+        choices: list[str] = [str(playlist.stem) for playlist in playlists]
+        result: str | None = gum_choose(choices)
+        if result is not None:
+            playlist: Path = PLAYLISTS / result
+        else:
+            secho("🚨 Cancelled.", fg=colors.RED)
+            raise Exit(1)
 
     assert playlist in playlists, "Playlist not found."
 

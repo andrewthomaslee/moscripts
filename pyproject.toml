@@ -20,6 +20,7 @@ build-backend = "hatchling.build"
 dev = [
     {include-group = "test"},
     "marimo[recommended]>=0.15.0",
+    "pytest-mock>=3.14.1",
     "python-lsp-server>=1.13.0",
     "vegafusion>=2.0.2",
     "vl-convert-python>=1.8.0",

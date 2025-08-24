@@ -4,6 +4,78 @@ from zoneinfo import ZoneInfo
 import subprocess
 from pathlib import Path
 import os
+import re
+import platform
+from datetime import timedelta
+
+
+def _get_system_timezone_name() -> str:
+    """
+    Attempts to retrieve the system's timezone name using various methods.
+    """
+    # Try timedatectl for Linux systems
+    if platform.system() == "Linux":
+        try:
+            result = subprocess.run(
+                ["timedatectl", "show", "--property=Timezone", "--value"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=1,
+            )
+            if result.stdout:
+                return result.stdout.strip()
+        except (
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+            subprocess.TimeoutExpired,
+        ):
+            pass
+
+    # Try reading /etc/localtime symlink for Unix-like systems
+    try:
+        result = subprocess.run(
+            ["readlink", "/etc/localtime"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=1,
+        )
+        if result.stdout:
+            # Extract timezone name from path like /usr/share/zoneinfo/America/New_York
+            path_parts = result.stdout.strip().split("zoneinfo/")
+            if len(path_parts) > 1:
+                return path_parts[-1]
+    except (
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+    ):
+        pass
+
+    # Fallback to UTC if no system timezone can be determined
+    return "UTC"
+
+
+def str_to_timezone(tz_str: str) -> ZoneInfo | timezone:
+    try:
+        return ZoneInfo(tz_str)  # IANA timezone
+    except Exception:
+        try:
+            # Attempt to parse as UTC offset
+            match = re.match(r"([+-])(\d{1,2})(?::?(\d{2}))?", tz_str)
+            if match:
+                sign, hours_str, minutes_str = match.groups()
+                hours = int(hours_str)
+                minutes = int(minutes_str) if minutes_str else 0
+                offset = timedelta(hours=hours, minutes=minutes)
+                if sign == "-":
+                    offset = -offset
+                return timezone(offset)
+            else:
+                raise ValueError("Invalid timezone string format")
+        except ValueError:
+            return timezone.utc  # fallback
 
 
 def create_human_readable_timestamp(

@@ -6,7 +6,7 @@ import subprocess
 from uuid import uuid4
 from pathlib import Path
 from typing import Iterable, Never
-from datetime import datetime, timezone
+from datetime import datetime
 
 # Third Party
 from typer import Argument, Exit, Option, Typer, colors, confirm, secho
@@ -14,9 +14,11 @@ from rich import print
 
 # My Imports
 from moscripts.utilities import nix_run_prefix
+from moscripts.gum import gum_confirm, gum_choose
+from moscripts import TZ, HOME
 
 # Globals
-HOME: Path = Path.home()
+CWD: Path = Path.cwd()
 MOTMP: Path = HOME / ".cache" / "marimo" / "motmp"
 VENV: Path = MOTMP / ".venv"
 
@@ -84,33 +86,38 @@ def sort_motmp_files(
 ) -> dict[str, str]:
     """Sorts MOTMP files by created time."""
     return {
-        str(file.stem): datetime.fromtimestamp(
-            file.stat().st_ctime, tz=timezone.utc
-        ).strftime("%m-%d @ %I:%M %p")
+        str(file.stem): datetime.fromtimestamp(file.stat().st_ctime, tz=TZ).strftime(
+            "%m-%d @ %I:%M %p"
+        )
         for file, session_file in sorted(
             motmp_files, key=lambda x: x[0].stat().st_ctime, reverse=reverse
         )
     }
 
 
-def get_previous_file(destination: Path, index: int) -> Path:
+def get_previous_file(destination: Path) -> Path:
     """Returns the previous file in the directory."""
     assert destination.exists(), "Destination not found."
     assert destination.is_dir(), "Destination must be a directory."
-    motmp_files: list[tuple[Path, Path | None]] = scan_motmp(destination)
-    if len(motmp_files) > 0:
-        previous_files: list[tuple[Path, Path | None]] = sorted(
-            motmp_files, key=lambda x: x[0].stat().st_ctime, reverse=True
-        )
-        try:
-            previous_file: Path = previous_files[index][0]
-            return previous_file
-        except IndexError:
-            secho(
-                f"🚨 Index out of range. Choose a number between 0 and {len(previous_files) - 1}. Or use `-1` for the oldest.",
-                fg=colors.RED,
+    previous_files: list[tuple[Path, Path | None]] = sorted(
+        scan_motmp(destination), key=lambda x: x[0].stat().st_ctime, reverse=True
+    )
+    if len(previous_files) > 0:
+        choices: list[str] = [
+            str(
+                str(file.stem)
+                + "  @  "
+                + datetime.fromtimestamp(file.stat().st_ctime, tz=TZ).strftime(
+                    "%m-%d %I:%M %p"
+                )
             )
-            raise Exit(1)
+            for file, _ in previous_files
+        ]
+        result: str = gum_choose(choices, header="Previous MOTMP files:")
+        previous_file: Path = destination / str(result + ".py")
+        assert previous_file.exists(), "Previous file not found."
+        assert previous_file.is_file(), "Previous file is not a file."
+        return previous_file
     else:
         secho("🔎 Found no MOTMP files.", fg=colors.YELLOW)
         raise Exit(0)
@@ -214,9 +221,9 @@ def motmp(
         help=f"Location of the virtual environment. Tries to find a `.venv` in cwd. Falls back to `{VENV}`.",
     ),
     scan: bool = Option(False, help="Scan the directory for MOTMP files."),
-    prev: int = Option(
-        None,
-        help="Launch the previous MOTMP file by index ordered by creation time. Use `0` for the newest and `-1` for the oldest.",
+    prev: bool = Option(
+        False,
+        help="Launch a previous MOTMP file.",
     ),
 ) -> Never:
     """Create and edit temp marimo notebooks."""
@@ -225,7 +232,6 @@ def motmp(
         init_motmp()
 
     # Sanity checks
-    CWD: Path = Path.cwd()
     assert CWD.exists(), f"🚨 Current working directory not found at {CWD}"
     assert destination.exists(), f"Destination not found. {destination}"
 
@@ -252,7 +258,7 @@ def motmp(
         if Path(CWD / ".venv").exists():
             venv = (
                 CWD / ".venv"
-                if confirm("Use .venv in cwd=`{CWD.stem}`?", default=True)
+                if gum_confirm(f"Use .venv in cwd=`{CWD.stem}`?")
                 else venv
             )
     try:
@@ -264,7 +270,7 @@ def motmp(
 
     # Resolve previous file or create new file
     if prev is not None:
-        motmp_file: Path = get_previous_file(destination, prev)
+        motmp_file: Path = get_previous_file(destination)
     else:
         motmp_file: Path = validate_motmp_file(destination)
 
