@@ -87,9 +87,9 @@ def sort_motmp_files(
     """Sorts MOTMP files by created time."""
     return {
         str(file.stem): datetime.fromtimestamp(file.stat().st_ctime, tz=TZ).strftime(
-            "%m-%d @ %I:%M %p"
+            "%m-%d %I:%M %p"
         )
-        for file, session_file in sorted(
+        for file, _ in sorted(
             motmp_files, key=lambda x: x[0].stat().st_ctime, reverse=reverse
         )
     }
@@ -99,22 +99,23 @@ def get_previous_file(destination: Path) -> Path:
     """Returns the previous file in the directory."""
     assert destination.exists(), "Destination not found."
     assert destination.is_dir(), "Destination must be a directory."
-    previous_files: list[tuple[Path, Path | None]] = sorted(
-        scan_motmp(destination), key=lambda x: x[0].stat().st_ctime, reverse=True
-    )
-    if len(previous_files) > 0:
-        choices: list[str] = [
-            str(
-                str(file.stem)
-                + "  @  "
-                + datetime.fromtimestamp(file.stat().st_ctime, tz=TZ).strftime(
-                    "%m-%d %I:%M %p"
-                )
+
+    previous_files: dict[str, Path] = {
+        str(
+            str(file.stem)
+            + "  @  "
+            + datetime.fromtimestamp(file.stat().st_ctime, tz=TZ).strftime(
+                "%m-%d %I:%M %p"
             )
-            for file, _ in previous_files
-        ]
+        ): file
+        for file, _ in sorted(
+            scan_motmp(destination), key=lambda x: x[0].stat().st_ctime, reverse=True
+        )
+    }
+    choices: list[str] = list(previous_files.keys())
+    if len(choices) > 0:
         result: str = gum_choose(choices, header="Previous MOTMP files:")
-        previous_file: Path = destination / str(result + ".py")
+        previous_file: Path = previous_files[result]
         assert previous_file.exists(), "Previous file not found."
         assert previous_file.is_file(), "Previous file is not a file."
         return previous_file
@@ -244,13 +245,19 @@ def motmp(
             secho("🔎 Found no MOTMP files.", fg=colors.YELLOW)
             raise Exit(0)
         print(sort_motmp_files(motmp_files))
-        if confirm("🗑️ Wipe files?", default=False):
+        if gum_confirm("🗑️ Wipe files?"):
             wipe_motmp(motmp_files)
 
         raise Exit(0)
     elif scan and destination.is_file():
         secho("🚨 Cannot scan a file. Please specify a directory.", fg=colors.RED)
         raise Exit(1)
+
+    # Resolve previous file or create new file
+    if prev:
+        motmp_file: Path = get_previous_file(destination)
+    else:
+        motmp_file: Path = validate_motmp_file(destination)
 
     # Validate venv
     if venv is None:
@@ -267,12 +274,6 @@ def motmp(
         venv = VENV
     assert venv.exists(), "Failed to find virtual environment."
     secho(f"Using venv=`{str(venv)}`", fg=colors.BRIGHT_MAGENTA)
-
-    # Resolve previous file or create new file
-    if prev is not None:
-        motmp_file: Path = get_previous_file(destination)
-    else:
-        motmp_file: Path = validate_motmp_file(destination)
 
     # Launch MOTMP file
     assert motmp_file.exists(), "Failed to create MOTMP file."
