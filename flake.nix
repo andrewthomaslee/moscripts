@@ -231,7 +231,6 @@
               cp ${scriptDrv} $out/bin/${scriptName}
               chmod +x $out/bin/${scriptName}
             '';
-            buildInputs = [pkgs.gum];
           };
 
         # Helper to create executable apps (for apps that need moscripts venv)
@@ -244,7 +243,6 @@
               chmod +x $out/bin/${appName}
               patchShebangs $out/bin/${appName}
             '';
-            buildInputs = [venv pkgs.gum];
           };
 
         # Helper to create docker images for standalone scripts

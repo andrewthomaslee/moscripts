@@ -1,17 +1,16 @@
 from subprocess import CompletedProcess
 import subprocess
-from pathlib import Path
-from moscripts.utilities import which_executable
+from moscripts.utilities import nix_run_prefix
 import sys
 from typer import Exit, secho, colors
 
-GUM: Path = which_executable("gum")
+GUM: tuple[str, ...] = nix_run_prefix("gum")
 
 
 def gum_confirm(message: str) -> bool:
     """Display interactive gum confirm interface and return user's choice."""
     cmd: list[str] = [
-        str(GUM),
+        *GUM,
         "confirm",
         message,
     ]
@@ -52,7 +51,7 @@ def gum_choose(
         raise ValueError("No choices provided.")
 
     cmd: list[str] = [
-        str(GUM),
+        *GUM,
         "choose",
         "--header",
         header,

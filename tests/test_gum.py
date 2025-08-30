@@ -1,9 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 import subprocess
-from pathlib import Path
 import sys
-import os  # Import the 'os' module
 from moscripts.gum import gum_choose, gum_confirm, GUM
 from typer import Exit  # Import Exit from typer
 
@@ -21,7 +19,7 @@ class TestGumConfirm:
             result = gum_confirm("Are you sure?")
             assert result is True
             mock_run.assert_called_once_with(
-                [str(GUM), "confirm", "Are you sure?"],
+                [*GUM, "confirm", "Are you sure?"],
                 stdin=sys.stdin,
                 stdout=subprocess.PIPE,
                 stderr=sys.stderr,
@@ -39,7 +37,7 @@ class TestGumConfirm:
             result = gum_confirm("Are you sure?")
             assert result is False
             mock_run.assert_called_once_with(
-                [str(GUM), "confirm", "Are you sure?"],
+                [*GUM, "confirm", "Are you sure?"],
                 stdin=sys.stdin,
                 stdout=subprocess.PIPE,
                 stderr=sys.stderr,
@@ -80,14 +78,13 @@ class TestGumConfirm:
 
     def test_gum_confirm_file_not_found(self):
         """Test behavior when gum binary is missing"""
-        with patch("moscripts.gum.GUM", Path("/nonexistent/gum")):
-            with patch("subprocess.Popen") as mock_popen:
-                mock_popen.side_effect = FileNotFoundError("gum: command not found")
-                with pytest.raises(
-                    FileNotFoundError
-                ):  # Expect FileNotFoundError to be re-raised
-                    gum_confirm("Are you sure?")
-                mock_popen.assert_called_once()
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = FileNotFoundError("gum: command not found")
+            with pytest.raises(
+                FileNotFoundError
+            ):  # Expect FileNotFoundError to be re-raised
+                gum_confirm("Are you sure?")
+            mock_run.assert_called_once()
 
 
 class TestGumChoose:
@@ -145,7 +142,7 @@ class TestGumChoose:
 
             # Verify command construction
             expected_cmd = [
-                str(GUM),
+                *GUM,
                 "choose",
                 "--header",
                 "Select option:",
@@ -209,16 +206,6 @@ class TestGumChoose:
             assert result == expected
 
 
-class TestGumChooseIntegration:
-    """Integration tests with actual gum binary (optional)"""
-
-    def test_gum_binary_exists(self):
-        """Verify gum binary is accessible"""
-        assert GUM.exists()
-        assert GUM.is_file()
-        assert os.access(GUM, os.X_OK)
-
-
 class TestGumChooseErrorHandling:
     """Test error handling and edge cases"""
 
@@ -237,16 +224,13 @@ class TestGumChooseErrorHandling:
 
     def test_gum_choose_file_not_found(self):
         """Test behavior when gum binary is missing"""
-        with patch("moscripts.gum.GUM", Path("/nonexistent/gum")):
-            with patch("subprocess.Popen") as mock_popen:  # Patch Popen directly
-                # Configure mock_popen to raise FileNotFoundError when instantiated
-                mock_popen.side_effect = FileNotFoundError("gum: command not found")
-
-                with pytest.raises(
-                    FileNotFoundError
-                ):  # Expect FileNotFoundError to be re-raised
-                    gum_choose(TestGumChoose.SAMPLE_CHOICES)
-                mock_popen.assert_called_once()
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = FileNotFoundError("gum: command not found")
+            with pytest.raises(
+                FileNotFoundError
+            ):  # Expect FileNotFoundError to be re-raised
+                gum_choose(TestGumChoose.SAMPLE_CHOICES)
+            mock_run.assert_called_once()
 
 
 # Fixtures for common test setup
