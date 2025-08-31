@@ -204,6 +204,7 @@
     packages = forAllSystems (
       system: let
         pkgs = nixpkgs.legacyPackages.${system};
+        python = pkgs.python313;
         pythonSet = pythonSets.${system}.standard;
         venv = pythonSet.mkVirtualEnv "moscripts-venv" workspace.deps.default;
         # alpine base docker image
@@ -243,6 +244,7 @@
               chmod +x $out/bin/${appName}
               patchShebangs $out/bin/${appName}
             '';
+            buildInputs = [venv];
           };
 
         # Helper to create docker images for standalone scripts
@@ -250,7 +252,7 @@
           pkgs.dockerTools.buildLayeredImage {
             name = "${scriptName}-container";
             fromImage = alpine;
-            contents = [(makeStandaloneExecutable scriptName scriptDrv) pkgs.curl pkgs.nix pkgs.gum];
+            contents = [(makeStandaloneExecutable scriptName scriptDrv) pkgs.curl pkgs.nix];
             config = {
               Cmd = ["/bin/${scriptName}"];
             };
@@ -261,7 +263,7 @@
           pkgs.dockerTools.buildLayeredImage {
             name = "${appName}-container";
             fromImage = alpine;
-            contents = [(makeAppExecutable appName appPath) pkgs.curl pkgs.nix pkgs.gum];
+            contents = [(makeAppExecutable appName appPath) pkgs.curl pkgs.nix];
             config = {
               Cmd = ["/bin/${appName}"];
             };
