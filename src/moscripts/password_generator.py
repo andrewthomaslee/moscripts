@@ -1,17 +1,10 @@
-#!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.13"
-# dependencies = [
-#     "typer",
-# ]
-# ///
-
-from typing import LiteralString
+import secrets
 import string
+from collections.abc import Iterable
+from typing import LiteralString
+
 import typer
 from typer import Typer
-import secrets
-from collections.abc import Iterable
 
 
 def generate_random_password(length: int, character_set: Iterable[str]) -> str:

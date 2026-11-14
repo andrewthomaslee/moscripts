@@ -1,28 +1,24 @@
-#!/usr/bin/env python
-
-# Standard Library
 import os
 import subprocess
-from uuid import uuid4
-from pathlib import Path
-from typing import Iterable, Never
+from collections.abc import Iterable
 from datetime import datetime
+from pathlib import Path
+from typing import Never
+from uuid import uuid4
 
-# Third Party
-from typer import Argument, Exit, Option, Typer, colors, confirm, secho
 from rich import print
+from typer import Argument, Exit, Option, Typer, colors, confirm, secho
 
-# My Imports
-from moscripts.utilities import nix_run_prefix
-from moscripts.gum import gum_confirm, gum_choose
-from moscripts import TZ, HOME
+from moscripts import HOME, TZ
+from moscripts.gum import gum_choose, gum_confirm
+from moscripts.utilities import tool_prefix
 
 # Globals
 CWD: Path = Path.cwd()
 MOTMP: Path = HOME / ".cache" / "marimo" / "motmp"
 VENV: Path = MOTMP / ".venv"
 
-uv_cmd_prefix: tuple[str, ...] = nix_run_prefix("uv")
+uv_cmd_prefix: tuple[str, ...] = tool_prefix("uv")
 
 
 def init_motmp() -> None:
@@ -131,13 +127,11 @@ def wipe_motmp(motmp_files: Iterable[tuple[Path, Path | None]]) -> None:
             motmp_file.unlink()
         except Exception as e:
             secho(f"Failed to wipe {motmp_file}: {e}", fg=colors.RED, err=True)
-            pass
         try:
             if session_file:
                 session_file.unlink()
         except Exception as e:
             secho(f"Failed to wipe {session_file}: {e}", fg=colors.RED, err=True)
-            pass
 
 
 def create_motmp(directory: Path = MOTMP) -> Path:
@@ -164,7 +158,7 @@ def launch_motmp(motmp_file: Path, venv: Path = VENV) -> Never:
         str(motmp_file),
         "--no-token",
     ]
-    print(cmd)
+    print(cmd, flush=True)
     try:
         os.execv(str(marimo_executable), cmd)
     except Exception as e:
@@ -273,7 +267,7 @@ def motmp(
     except Exception:
         venv = VENV
     assert venv.exists(), "Failed to find virtual environment."
-    secho(f"Using venv=`{str(venv)}`", fg=colors.BRIGHT_MAGENTA)
+    secho(f"Using venv=`{venv!s}`", fg=colors.BRIGHT_MAGENTA)
 
     # Launch MOTMP file
     assert motmp_file.exists(), "Failed to create MOTMP file."

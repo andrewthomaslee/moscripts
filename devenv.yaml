@@ -1,0 +1,21 @@
+# devenv CLI entry: devenv shell, auto-activation (devenv hook + devenv
+# allow), devenv up, devenv test. nixpkgs and the uv2nix pins come from
+# external-systems/pkgs at the rev flake.lock holds (checks.lock-sync; fix
+# with `sync-locks`). The input is NOT named `pkgs`: devenv passes every
+# input to devenv.nix as a module argument, so an input called `pkgs` would
+# replace nixpkgs' pkgs ("attribute 'bash' missing").
+inputs:
+  org-pkgs:
+    url: github:external-systems/pkgs/2fa0b282493c68d0d80bef224064c7cdfa6e30a4
+  nixpkgs:
+    follows: org-pkgs/nixpkgs
+  pyproject-nix:
+    follows: org-pkgs/pyproject-nix
+  uv2nix:
+    follows: org-pkgs/uv2nix
+  pyproject-build-systems:
+    follows: org-pkgs/pyproject-build-systems
+imports:
+  # The org shell: fmt, check, sync-locks, docs, slides, vm-test; devenv up
+  # serves docs and slides.
+  - org-pkgs/devenv

@@ -1,14 +1,7 @@
-#!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.13"
-# dependencies = [
-#     "typer",
-# ]
-# ///
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 import typer
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
 
 
 def create_human_readable_timestamp(
@@ -31,9 +24,9 @@ def create_human_readable_timestamp(
         A formatted string representation of the timestamp.
     """
     if dt_object is None:
-        source_dt: datetime = datetime.now(timezone.utc)
+        source_dt: datetime = datetime.now(UTC)
     elif dt_object.tzinfo is None:
-        source_dt: datetime = dt_object.replace(tzinfo=timezone.utc)
+        source_dt: datetime = dt_object.replace(tzinfo=UTC)
     else:
         source_dt = dt_object
 

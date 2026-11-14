@@ -1,52 +1,47 @@
 [project]
 name = "moscripts"
 version = "0.2.0"
-description = "Add your description here"
+description = "Small Python CLIs packaged with Nix: motmp, mpv_playlists, password_generator, human_timestamp"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "andrewthomaslee", email = "andrewthomaslee.business@gmail.com" },
 ]
 requires-python = ">=3.13"
 dependencies = [
     "pydantic-settings>=2.10.1",
+    "rich>=13",
     "typer>=0.16.0",
 ]
 
+[project.scripts]
+human_timestamp = "moscripts.human_timestamp:app"
+motmp = "moscripts.motmp:app"
+mpv_playlists = "moscripts.mpv_playlists:app"
+password_generator = "moscripts.password_generator:app"
+
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    {include-group = "test"},
-    "marimo[recommended]>=0.15.0",
-    "pytest-mock>=3.14.1",
-    "python-lsp-server>=1.13.0",
-    "vegafusion>=2.0.2",
-    "vl-convert-python>=1.8.0",
-    "watchdog>=6.0.0",
-    "websockets>=15.0.1",
-]
-test = [
     "pyrefly>=0.29.2",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
+    "pytest-mock>=3.14.1",
     "ruff>=0.12.9",
 ]
 
 [tool.pyrefly]
-project-includes = [
-    "**/*", 
-    "**/apps/**/*", 
-    "**/tests/**/*", 
-    "**/pythonScripts/**/*", 
-    "**/src/**/*"
-]
-project-excludes = [
-    "**/node_modules",
-    "**/__pycache__",
-    "**/__marimo__",
-    "**/.direnv",
-    "**/result",
-    "**/*venv/**/*",
-]
+project-includes = ["src/**/*", "tests/**/*"]
+project-excludes = ["**/__pycache__", "**/result", "**/.devenv/**/*"]
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+# Explicit, so a ruff bump never changes what the `ruff` check enforces:
+# pyflakes, the error-level pycodestyle rules, import sorting, pyupgrade.
+select = ["E4", "E7", "E9", "F", "I", "UP"]
