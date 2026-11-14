@@ -1,10 +1,12 @@
-from subprocess import CompletedProcess
 import subprocess
-from moscripts.utilities import nix_run_prefix
 import sys
-from typer import Exit, secho, colors
+from subprocess import CompletedProcess
 
-GUM: tuple[str, ...] = nix_run_prefix("gum")
+from typer import Exit, colors, secho
+
+from moscripts.utilities import tool_prefix
+
+GUM: tuple[str, ...] = tool_prefix("gum")
 
 
 def gum_confirm(message: str) -> bool:

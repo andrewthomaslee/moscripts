@@ -1,11 +1,21 @@
-.env
-.venv
-__pycache__
-.pytest_cache
-.ruff_cache
-__marimo__
 result
+result-*
+.devenv*
 .direnv
-.devenv
+devenv.local.nix
+# Pages builds happen in CI only; never commit them.
+_site/
+site/
+# vm-test logs and driver output.
+.vm-tests/
+# Python
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.coverage
+htmlcov/
+# Local secrets/env and motmp scratch notebooks.
+.env
+__marimo__/
 motmp_*.py
-.vscode

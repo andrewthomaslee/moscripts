@@ -1,70 +1,56 @@
 # moscripts
-A collection of Python scripts managed by Nix
 
+[![ci](https://img.shields.io/github/actions/workflow/status/andrewthomaslee/moscripts/ci.yml?branch=main&label=ci&logo=github)](https://github.com/andrewthomaslee/moscripts/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/andrewthomaslee/moscripts?label=release&color=d97757)](https://github.com/andrewthomaslee/moscripts/releases/latest)
+[![docs](https://img.shields.io/website?url=https%3A%2F%2Fandrewthomaslee.github.io%2Fmoscripts%2F&label=docs&up_message=online&down_message=offline)](https://andrewthomaslee.github.io/moscripts/)
+[![license](https://img.shields.io/github/license/andrewthomaslee/moscripts)](https://github.com/andrewthomaslee/moscripts/blob/main/LICENSE)
+[![built with Nix](https://img.shields.io/badge/built_with-Nix-5277C3?logo=nixos&logoColor=white)](https://nixos.org)
 
+Small Python CLIs packaged with Nix: one uv workspace built by uv2nix into one
+package. Docs and slides: <https://andrewthomaslee.github.io/moscripts/>.
 
-## Determinate Systems Nix installer
-Determinate Nix Installer is the easiest and most reliable way to install Nix on your system. This will enable flakes by default.
-1. Download [Determinate Systems Nix installer](https://github.com/DeterminateSystems/nix-installer) with one command:
-```bash
-curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate
-```
+| Command | Does |
+| --- | --- |
+| `motmp` | create and edit temporary marimo notebooks with a managed venv |
+| `mpv_playlists` | play a playlist from `~/Music/Playlists` with mpv |
+| `password_generator` | secure, customizable passwords |
+| `human_timestamp` | a human-readable timestamp in any time zone |
 
+## Use
 
-## Discover flake options
-```bash
-nix flake show github:andrewthomaslee/moscripts
-```
+Needs [Nix](https://nixos.org/download/) with flakes enabled.
 
-## Usage
-To run apps ( easy way ):
-```bash
-nix run github:andrewthomaslee/moscripts#motmp
-```
-To build package ( recommended ):
-```bash
-nix build github:andrewthomaslee/moscripts
-```
-To build docker image ( not recommended ):
-```bash
-nix build .#password_generator-container
-```
-
-
-# Apps
-## motmp
-MOTMP is a simple CLI that allows you to create and edit temporary marimo notbook files with a managed virtual environment. It's a great way to quickly create notebooks for testing or prototyping. Under the hood uses nix package manager to execute `uv` to manage the fallback virtual environment. MOTMP uses a directory in `~/.cache/marimo/motmp` to store temporary notebooks by default. If `.` is passed as the destination argument the notebook will be created inplace and will search for `.venv` in the current working directory.
-
-
-```bash
-nix run github:andrewthomaslee/moscripts#motmp -- --help
-```
-![MOTMP Help](screenshots/motmp--help.png)
-![MOTMP Example](screenshots/motmp--run.png)
-
-
-## mpv_playlists
-Launches mpv with a playlist from `~/Music/Playlists`.
-
-
-```bash
-nix run github:andrewthomaslee/moscripts#mpv_playlists -- --help
-```
-![mpv_playlists Example](screenshots/mpv_playlists--scan.png)
-
-
-## password_generator
-A secure, customizable password generator.
-
-
-```bash
+```sh
 nix run github:andrewthomaslee/moscripts#password_generator -- --help
+nix profile add github:andrewthomaslee/moscripts   # all four on PATH
 ```
-![password_generator Run](screenshots/password_generator--run.png)
 
+In a flake that follows [external-systems/pkgs](https://github.com/external-systems/pkgs):
 
-## human_timestamp
-A simple human-readable timestamp. Defaults to `America/Chicago` because Texas is the only time zone I recognize.
-```bash
-nix run github:andrewthomaslee/moscripts#human_timestamp -- --help
+```nix
+inputs.moscripts = {
+  url = "github:andrewthomaslee/moscripts";
+  inputs.org-pkgs.follows = "org-pkgs";
+};
 ```
+
+## Develop
+
+Needs Nix and devenv.
+
+```sh
+devenv allow     # editable venv, auto-activates on cd (after `devenv hook`)
+fmt              # format and lint
+check            # nix flake check: pytest, pyrefly, ruff, uv-lock, docs
+docs-build       # static docs to ./result-docs; open index.html from disk
+devenv up        # live docs on :8981 and slides on :8982
+```
+
+CI is the [external-systems org CI](https://github.com/external-systems/pkgs):
+`nix flake check` on PRs; on `main`, the docs deploy to GitHub Pages and a
+`0.2.<commits>` release is tagged. See
+[Development](https://andrewthomaslee.github.io/moscripts/development.html).
+
+## License
+
+[MIT](LICENSE)

@@ -1,32 +1,31 @@
 import subprocess
-from subprocess import CompletedProcess
 import sys
-from pathlib import Path
-import moscripts
-from moscripts.utilities import str_to_timezone, _get_system_timezone_name
+from datetime import UTC
+from subprocess import CompletedProcess
 
-test_dir: Path = Path(__file__).parent
-app_dir: Path = test_dir.parent / "apps"
-pythonScript_dir: Path = test_dir.parent / "pythonScripts"
+import moscripts
+from moscripts.utilities import _get_system_timezone_name, str_to_timezone
+
+HUMAN_TIMESTAMP: list[str] = [sys.executable, "-m", "moscripts.human_timestamp"]
 
 
 def test_import() -> None:
-    assert moscripts.hello is not None
-    assert moscripts.NIX is not None
     assert moscripts.HOME is not None
+    assert moscripts.TZ is not None
 
 
-def test_hello() -> None:
-    result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(app_dir / "hello.py")], capture_output=True, text=True
-    )
-    assert result.stdout == "Hello from moscripts hello app!\n"
-    assert result.stderr == ""
+def test_cli_modules_import() -> None:
+    """Every CLI imports without side effects (no nix, no ~/Music needed)."""
+    import importlib
+
+    for name in ("motmp", "mpv_playlists", "password_generator", "human_timestamp"):
+        module = importlib.import_module(f"moscripts.{name}")
+        assert module.app is not None
 
 
 def test_human_timestamp() -> None:
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(pythonScript_dir / "human_timestamp.py")],
+        HUMAN_TIMESTAMP,
         capture_output=True,
         text=True,
     )
@@ -34,7 +33,7 @@ def test_human_timestamp() -> None:
     assert result.stderr == ""
 
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(pythonScript_dir / "human_timestamp.py"), "--help"],
+        [*HUMAN_TIMESTAMP, "--help"],
         capture_output=True,
         text=True,
     )
@@ -43,8 +42,7 @@ def test_human_timestamp() -> None:
 
     result: CompletedProcess[str] = subprocess.run(
         [
-            sys.executable,
-            str(pythonScript_dir / "human_timestamp.py"),
+            *HUMAN_TIMESTAMP,
             "-t",
             "America/New_York",
         ],
@@ -55,7 +53,7 @@ def test_human_timestamp() -> None:
     assert result.stderr == ""
 
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(pythonScript_dir / "human_timestamp.py"), "-t", "UTC"],
+        [*HUMAN_TIMESTAMP, "-t", "UTC"],
         capture_output=True,
         text=True,
     )
@@ -63,7 +61,7 @@ def test_human_timestamp() -> None:
     assert result.stderr == ""
 
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(pythonScript_dir / "human_timestamp.py"), "-f", "%Y"],
+        [*HUMAN_TIMESTAMP, "-f", "%Y"],
         capture_output=True,
         text=True,
     )
@@ -71,7 +69,7 @@ def test_human_timestamp() -> None:
     assert result.stderr == ""
 
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(pythonScript_dir / "human_timestamp.py"), "-t", "FAIL"],
+        [*HUMAN_TIMESTAMP, "-t", "FAIL"],
         capture_output=True,
         text=True,
     )
@@ -79,8 +77,8 @@ def test_human_timestamp() -> None:
 
 
 def test_str_to_timezone() -> None:
+    from datetime import datetime, timedelta, timezone
     from zoneinfo import ZoneInfo
-    from datetime import datetime, timezone, timedelta
 
     # Test IANA timezones
     tz_iana = str_to_timezone("America/New_York")
@@ -110,11 +108,11 @@ def test_str_to_timezone() -> None:
 
     # Test invalid string fallback to UTC
     tz_fallback = str_to_timezone("INVALID_TZ_STRING")
-    assert tz_fallback == timezone.utc
+    assert tz_fallback == UTC
 
     # Test empty string fallback to UTC
     tz_empty_fallback = str_to_timezone("")
-    assert tz_empty_fallback == timezone.utc
+    assert tz_empty_fallback == UTC
 
     # Test system timezone getter
     system_tz_name = _get_system_timezone_name()

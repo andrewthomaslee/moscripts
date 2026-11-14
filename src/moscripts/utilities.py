@@ -1,12 +1,12 @@
-from subprocess import CompletedProcess
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
-import subprocess
-from pathlib import Path
 import os
-import re
 import platform
-from datetime import timedelta
+import re
+import shutil
+import subprocess
+from datetime import UTC, datetime, timedelta, timezone
+from pathlib import Path
+from subprocess import CompletedProcess
+from zoneinfo import ZoneInfo
 
 
 def _get_system_timezone_name() -> str:
@@ -75,7 +75,7 @@ def str_to_timezone(tz_str: str) -> ZoneInfo | timezone:
             else:
                 raise ValueError("Invalid timezone string format")
         except ValueError:
-            return timezone.utc  # fallback
+            return UTC  # fallback
 
 
 def create_human_readable_timestamp(
@@ -98,9 +98,9 @@ def create_human_readable_timestamp(
         A formatted string representation of the timestamp.
     """
     if dt_object is None:
-        source_dt: datetime = datetime.now(timezone.utc)
+        source_dt: datetime = datetime.now(UTC)
     elif dt_object.tzinfo is None:
-        source_dt: datetime = dt_object.replace(tzinfo=timezone.utc)
+        source_dt: datetime = dt_object.replace(tzinfo=UTC)
     else:
         source_dt = dt_object
 
@@ -108,6 +108,22 @@ def create_human_readable_timestamp(
     local_dt: datetime = source_dt.astimezone(display_tz)
 
     return local_dt.strftime(fmt)
+
+
+def tool_prefix(command: str) -> tuple[str, ...]:
+    """Returns the argv prefix that runs an external tool.
+
+    The Nix package puts pinned tools (gum, uv, mpv) at the end of PATH, so a
+    PATH lookup finds the user's own copy first and the pinned one otherwise.
+    Without either, fall back to `nix run nixpkgs#<command>`. Without nix,
+    return the bare name and let the exec fail with FileNotFoundError.
+    """
+    found: str | None = shutil.which(command)
+    if found is not None:
+        return (found,)
+    if shutil.which("nix") is not None:
+        return nix_run_prefix(command)
+    return (command,)
 
 
 def nix_run_prefix(command: str) -> tuple[str, ...]:

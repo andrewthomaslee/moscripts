@@ -1,22 +1,12 @@
-# Standard Library
-from subprocess import CompletedProcess
 import subprocess
-from typing import LiteralString
-from pathlib import Path
 import sys
-
-# Third Party
-
-# My Imports
-
-
-test_dir: Path = Path(__file__).parent
-pythonScripts_dir: Path = test_dir.parent / "pythonScripts"
+from subprocess import CompletedProcess
+from typing import LiteralString
 
 
 def test_password_generator() -> None:
     result: CompletedProcess[str] = subprocess.run(
-        [sys.executable, str(pythonScripts_dir / "password_generator.py")],
+        [sys.executable, "-m", "moscripts.password_generator"],
         capture_output=True,
         text=True,
     )
@@ -27,7 +17,8 @@ def test_password_generator() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(pythonScripts_dir / "password_generator.py"),
+            "-m",
+            "moscripts.password_generator",
             "--length",
             "32",
         ],
@@ -41,7 +32,8 @@ def test_password_generator() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(pythonScripts_dir / "password_generator.py"),
+            "-m",
+            "moscripts.password_generator",
             "--length",
             "300",
         ],
@@ -57,7 +49,8 @@ def test_password_generator_chars() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [
             sys.executable,
-            str(pythonScripts_dir / "password_generator.py"),
+            "-m",
+            "moscripts.password_generator",
             "--custom",
             "a",
         ],
@@ -71,7 +64,8 @@ def test_password_generator_chars() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(pythonScripts_dir / "password_generator.py"),
+            "-m",
+            "moscripts.password_generator",
             "--custom",
             "@",
         ],
@@ -115,7 +109,8 @@ def test_password_generator_chars() -> None:
         result = subprocess.run(
             [
                 sys.executable,
-                str(pythonScripts_dir / "password_generator.py"),
+                "-m",
+                "moscripts.password_generator",
                 "--no-symbols",
                 "--cli",
             ],
@@ -135,7 +130,8 @@ def test_password_generator_no_lowercase() -> None:
         result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
-                str(pythonScripts_dir / "password_generator.py"),
+                "-m",
+                "moscripts.password_generator",
                 "--cli",
                 "--no-lowercase",
             ],
@@ -155,7 +151,8 @@ def test_password_generator_no_uppercase() -> None:
         result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
-                str(pythonScripts_dir / "password_generator.py"),
+                "-m",
+                "moscripts.password_generator",
                 "--cli",
                 "--no-uppercase",
             ],
@@ -175,7 +172,8 @@ def test_password_generator_no_digits() -> None:
         result: CompletedProcess[str] = subprocess.run(
             [
                 sys.executable,
-                str(pythonScripts_dir / "password_generator.py"),
+                "-m",
+                "moscripts.password_generator",
                 "--cli",
                 "--no-digits",
             ],
@@ -191,7 +189,8 @@ def test_password_generator_length() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [
             sys.executable,
-            str(pythonScripts_dir / "password_generator.py"),
+            "-m",
+            "moscripts.password_generator",
             "--cli",
             "--length",
             "32",
@@ -206,7 +205,8 @@ def test_password_generator_length() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            str(pythonScripts_dir / "password_generator.py"),
+            "-m",
+            "moscripts.password_generator",
             "--cli",
         ],
         capture_output=True,

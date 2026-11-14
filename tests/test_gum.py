@@ -1,9 +1,11 @@
-import pytest
-from unittest.mock import Mock, patch
 import subprocess
 import sys
-from moscripts.gum import gum_choose, gum_confirm, GUM
+from unittest.mock import Mock, patch
+
+import pytest
 from typer import Exit  # Import Exit from typer
+
+from moscripts.gum import GUM, gum_choose, gum_confirm
 
 
 class TestGumConfirm:
