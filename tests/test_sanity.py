@@ -27,6 +27,7 @@ def test_human_timestamp() -> None:
     result: CompletedProcess[str] = subprocess.run(
         HUMAN_TIMESTAMP,
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -35,6 +36,7 @@ def test_human_timestamp() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [*HUMAN_TIMESTAMP, "--help"],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -47,6 +49,7 @@ def test_human_timestamp() -> None:
             "America/New_York",
         ],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -55,6 +58,7 @@ def test_human_timestamp() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [*HUMAN_TIMESTAMP, "-t", "UTC"],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -63,6 +67,7 @@ def test_human_timestamp() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [*HUMAN_TIMESTAMP, "-f", "%Y"],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -71,6 +76,7 @@ def test_human_timestamp() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [*HUMAN_TIMESTAMP, "-t", "FAIL"],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stderr != ""

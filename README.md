@@ -41,7 +41,7 @@ Needs Nix and devenv.
 ```sh
 devenv allow     # editable venv, auto-activates on cd (after `devenv hook`)
 fmt              # format and lint
-check            # nix flake check: pytest, pyrefly, ruff, uv-lock, docs
+check            # nix flake check: ruff, ty, pytest, uv-lock, docs
 docs-build       # static docs to ./result-docs; open index.html from disk
 devenv up        # live docs on :8981 and slides on :8982
 ```

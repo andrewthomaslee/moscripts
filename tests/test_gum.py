@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 import pytest
@@ -93,8 +94,8 @@ class TestGumChoose:
     """Test suite for gum_choose function"""
 
     # Test data
-    SAMPLE_CHOICES = ["option1", "option2", "option3"]
-    EMPTY_CHOICES = []
+    SAMPLE_CHOICES: ClassVar[list[str]] = ["option1", "option2", "option3"]
+    EMPTY_CHOICES: ClassVar[list[str]] = []
 
     def test_gum_choose_basic_success(self):
         """Test successful choice selection"""

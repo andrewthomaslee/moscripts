@@ -4,9 +4,32 @@ import re
 import shutil
 import subprocess
 from datetime import UTC, datetime, timedelta, timezone
+from importlib.metadata import version as dist_version
 from pathlib import Path
 from subprocess import CompletedProcess
-from zoneinfo import ZoneInfo
+from typing import Annotated
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+import typer
+
+
+def _print_version(value: bool | None) -> None:
+    """Prints `moscripts <version>` and exits, for every CLI's --version."""
+    if value:
+        typer.echo(f"moscripts {dist_version('moscripts')}")
+        raise typer.Exit
+
+
+# Add to a command as `_version: VersionOption = None`.
+VersionOption = Annotated[
+    bool | None,
+    typer.Option(
+        "--version",
+        callback=_print_version,
+        is_eager=True,
+        help="Show the version and exit.",
+    ),
+]
 
 
 def _get_system_timezone_name() -> str:
@@ -60,7 +83,7 @@ def _get_system_timezone_name() -> str:
 def str_to_timezone(tz_str: str) -> ZoneInfo | timezone:
     try:
         return ZoneInfo(tz_str)  # IANA timezone
-    except Exception:
+    except (ZoneInfoNotFoundError, ValueError):
         try:
             # Attempt to parse as UTC offset
             match = re.match(r"([+-])(\d{1,2})(?::?(\d{2}))?", tz_str)
@@ -143,6 +166,7 @@ def which_nix() -> Path:
     result: CompletedProcess[str] = subprocess.run(
         ["which", "nix"],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.returncode == 0, "Nix not found. Please install it."
@@ -156,6 +180,7 @@ def which_executable(executable: str) -> Path:
     result: CompletedProcess[str] = subprocess.run(
         ["which", executable],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.returncode == 0, f"{executable} not found."

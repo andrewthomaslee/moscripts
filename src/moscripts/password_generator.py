@@ -6,6 +6,8 @@ from typing import LiteralString
 import typer
 from typer import Typer
 
+from moscripts.utilities import VersionOption
+
 
 def generate_random_password(length: int, character_set: Iterable[str]) -> str:
     """Generates a cryptographically secure random password.
@@ -51,6 +53,7 @@ LIMITED_SYMBOLS = "!#$%&?@"
 
 @app.command()
 def generate(
+    _version: VersionOption = None,
     length: int = typer.Option(
         64,
         "--length",

@@ -27,21 +27,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "pyrefly>=0.29.2",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "pytest-mock>=3.14.1",
-    "ruff>=0.12.9",
 ]
 
-[tool.pyrefly]
-project-includes = ["src/**/*", "tests/**/*"]
-project-excludes = ["**/__pycache__", "**/result", "**/.devenv/**/*"]
-
-[tool.ruff]
-target-version = "py313"
-
-[tool.ruff.lint]
-# Explicit, so a ruff bump never changes what the `ruff` check enforces:
-# pyflakes, the error-level pycodestyle rules, import sorting, pyupgrade.
-select = ["E4", "E7", "E9", "F", "I", "UP"]

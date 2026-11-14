@@ -69,7 +69,7 @@ pyproject.nix, build-system-pkgs and nix-systems at older revisions.
 ```sh
 devenv allow   # editable venv: src/ is live, no rebuilds
 uv add httpx   # uv edits uv.lock only
-fmt && check   # pytest, pyrefly, ruff, uv-lock, treefmt, docs
+fmt && check   # ruff, ty, pytest, uv-lock, treefmt, docs
 vm-test cli-smoke --remote --rebuild
 ```
 

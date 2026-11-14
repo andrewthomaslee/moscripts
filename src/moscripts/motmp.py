@@ -3,7 +3,7 @@ import subprocess
 from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Never
+from typing import Annotated, Never
 from uuid import uuid4
 
 from rich import print
@@ -11,7 +11,7 @@ from typer import Argument, Exit, Option, Typer, colors, confirm, secho
 
 from moscripts import HOME, TZ
 from moscripts.gum import gum_choose, gum_confirm
-from moscripts.utilities import tool_prefix
+from moscripts.utilities import VersionOption, tool_prefix
 
 # Globals
 CWD: Path = Path.cwd()
@@ -57,7 +57,7 @@ def init_motmp() -> None:
                     fg=colors.RED,
                     err=True,
                 )
-                raise e
+                raise
         else:
             secho("womp womp", fg=colors.RED)
             raise Exit(1)
@@ -125,12 +125,12 @@ def wipe_motmp(motmp_files: Iterable[tuple[Path, Path | None]]) -> None:
     for motmp_file, session_file in motmp_files:
         try:
             motmp_file.unlink()
-        except Exception as e:
+        except OSError as e:
             secho(f"Failed to wipe {motmp_file}: {e}", fg=colors.RED, err=True)
         try:
             if session_file:
                 session_file.unlink()
-        except Exception as e:
+        except OSError as e:
             secho(f"Failed to wipe {session_file}: {e}", fg=colors.RED, err=True)
 
 
@@ -142,7 +142,7 @@ def create_motmp(directory: Path = MOTMP) -> Path:
         motmp_file.touch(mode=0o644)
     except Exception as e:
         secho(f"Failed to create {motmp_file}: {e}", fg=colors.RED, err=True)
-        raise e
+        raise
     return motmp_file
 
 
@@ -163,7 +163,7 @@ def launch_motmp(motmp_file: Path, venv: Path = VENV) -> Never:
         os.execv(str(marimo_executable), cmd)
     except Exception as e:
         secho(f"Failed to launch {motmp_file}: {e}", fg=colors.RED, err=True)
-        raise e
+        raise
 
 
 def validate_motmp_file(destination: Path) -> Path:
@@ -208,13 +208,17 @@ app: Typer = Typer(add_completion=False)
 
 @app.command()
 def motmp(
-    destination: Path = Argument(
-        MOTMP, help="Location to place MOTMP file or a MOTMP file to launch."
-    ),
-    venv: Path = Option(
-        None,
-        help=f"Location of the virtual environment. Tries to find a `.venv` in cwd. Falls back to `{VENV}`.",
-    ),
+    _version: VersionOption = None,
+    destination: Annotated[
+        Path,
+        Argument(help="Location to place MOTMP file or a MOTMP file to launch."),
+    ] = MOTMP,
+    venv: Annotated[
+        Path | None,
+        Option(
+            help=f"Location of the virtual environment. Tries to find a `.venv` in cwd. Falls back to `{VENV}`.",
+        ),
+    ] = None,
     scan: bool = Option(False, help="Scan the directory for MOTMP files."),
     prev: bool = Option(
         False,
@@ -254,17 +258,13 @@ def motmp(
         motmp_file: Path = validate_motmp_file(destination)
 
     # Validate venv
-    if venv is None:
-        # Attempt to find a virtual environment
-        if Path(CWD / ".venv").exists():
-            venv = (
-                CWD / ".venv"
-                if gum_confirm(f"Use .venv in cwd=`{CWD.stem}`?")
-                else venv
-            )
+    # Attempt to find a virtual environment
+    if venv is None and Path(CWD / ".venv").exists():
+        venv = CWD / ".venv" if gum_confirm(f"Use .venv in cwd=`{CWD.stem}`?") else venv
     try:
-        venv = validate_venv(venv)
-    except Exception:
+        venv = VENV if venv is None else validate_venv(venv)
+    # A declined or failed venv prompt: fall back to the default.
+    except Exception:  # noqa: BLE001
         venv = VENV
     assert venv.exists(), "Failed to find virtual environment."
     secho(f"Using venv=`{venv!s}`", fg=colors.BRIGHT_MAGENTA)
@@ -276,7 +276,7 @@ def motmp(
         launch_motmp(motmp_file, venv)
     except Exception as e:
         secho(f"Failed to launch {motmp_file}: {e}", fg=colors.RED, err=True)
-        raise e
+        raise
 
 
 if __name__ == "__main__":

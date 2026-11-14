@@ -3,6 +3,8 @@ from zoneinfo import ZoneInfo
 
 import typer
 
+from moscripts.utilities import VersionOption
+
 
 def create_human_readable_timestamp(
     dt_object: datetime | None = None,
@@ -46,6 +48,7 @@ app: typer.Typer = typer.Typer(
 
 @app.command()
 def create(
+    _version: VersionOption = None,
     target_tz: str = typer.Option(
         "America/Chicago",
         "--target-tz",

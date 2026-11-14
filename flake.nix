@@ -9,11 +9,6 @@
     nixpkgs.follows = "org-pkgs/nixpkgs";
     flake-parts.follows = "org-pkgs/flake-parts";
     import-tree.follows = "org-pkgs/import-tree";
-
-    # Python (uv2nix): the org pins, here and in devenv.yaml.
-    pyproject-nix.follows = "org-pkgs/pyproject-nix";
-    uv2nix.follows = "org-pkgs/uv2nix";
-    pyproject-build-systems.follows = "org-pkgs/pyproject-build-systems";
   };
 
   outputs = inputs:

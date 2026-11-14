@@ -8,6 +8,7 @@ def test_password_generator() -> None:
     result: CompletedProcess[str] = subprocess.run(
         [sys.executable, "-m", "moscripts.password_generator"],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -23,6 +24,7 @@ def test_password_generator() -> None:
             "32",
         ],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -38,6 +40,7 @@ def test_password_generator() -> None:
             "300",
         ],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -55,6 +58,7 @@ def test_password_generator_chars() -> None:
             "a",
         ],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -70,6 +74,7 @@ def test_password_generator_chars() -> None:
             "@",
         ],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -115,6 +120,7 @@ def test_password_generator_chars() -> None:
                 "--cli",
             ],
             capture_output=True,
+            check=False,
             text=True,
         )
         assert result.stdout != ""
@@ -136,6 +142,7 @@ def test_password_generator_no_lowercase() -> None:
                 "--no-lowercase",
             ],
             capture_output=True,
+            check=False,
             text=True,
         )
         assert result.stdout != ""
@@ -157,6 +164,7 @@ def test_password_generator_no_uppercase() -> None:
                 "--no-uppercase",
             ],
             capture_output=True,
+            check=False,
             text=True,
         )
         assert result.stdout != ""
@@ -178,6 +186,7 @@ def test_password_generator_no_digits() -> None:
                 "--no-digits",
             ],
             capture_output=True,
+            check=False,
             text=True,
         )
         assert result.stdout != ""
@@ -196,6 +205,7 @@ def test_password_generator_length() -> None:
             "32",
         ],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""
@@ -210,6 +220,7 @@ def test_password_generator_length() -> None:
             "--cli",
         ],
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.stdout != ""

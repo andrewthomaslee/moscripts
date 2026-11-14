@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
+from typing import Annotated
 
 from rich import print
 from typer import Argument, Exit, Option, Typer, colors, secho
 
 from moscripts.gum import gum_choose
-from moscripts.utilities import tool_prefix
+from moscripts.utilities import VersionOption, tool_prefix
 
 # Globals
 HOME: Path = Path.home()
@@ -37,12 +38,15 @@ app: Typer = Typer(add_completion=False)
 
 @app.command()
 def mpv_playlists(
+    _version: VersionOption = None,
     playlist: str | None = Argument(
         None, help="Playlist name or path. Defaults to the first playlist."
     ),
     scan: bool = Option(False, help="Scan the directory for playlists."),
     shuffle: bool = Option(True, help="Shuffle the playlist."),
-    directory: Path = Option(PLAYLISTS, help="Directory holding the playlists."),
+    directory: Annotated[
+        Path, Option(help="Directory holding the playlists.")
+    ] = PLAYLISTS,
 ) -> None:
     """Launches mpv with a playlist."""
     playlists: list[Path] = find_playlists(directory)
@@ -80,7 +84,7 @@ def mpv_playlists(
         os.execv(mpv_cmd_prefix[0], cmd)
     except Exception as e:
         secho(f"Failed to launch {selected}: {e}", fg=colors.RED, err=True)
-        raise e
+        raise
 
 
 if __name__ == "__main__":
