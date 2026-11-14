@@ -17,28 +17,23 @@ def gum_confirm(message: str) -> bool:
         message,
     ]
 
-    try:
-        result: CompletedProcess[str] = subprocess.run(
-            cmd,
-            stdin=sys.stdin,
-            stdout=subprocess.PIPE,
-            stderr=sys.stderr,
-            text=True,
-            check=False,  # Don't raise exception on non-zero exit
-        )
-        # gum confirm returns 0 for yes, 1 for no, 130 for cancellation (SIGINT)
-        if result.returncode == 0:
-            return True
-        elif result.returncode == 1:
-            return False
-        else:
-            # Any other non-zero return code indicates cancellation or an error
-            secho("🚨 Cancelled.", fg=colors.RED)
-            raise Exit(1)
-
-    except (KeyboardInterrupt, subprocess.CalledProcessError, FileNotFoundError) as e:
-        # Handle user cancellation (KeyboardInterrupt), subprocess errors, or gum not found
-        raise e
+    result: CompletedProcess[str] = subprocess.run(
+        cmd,
+        stdin=sys.stdin,
+        stdout=subprocess.PIPE,
+        stderr=sys.stderr,
+        text=True,
+        check=False,  # Don't raise exception on non-zero exit
+    )
+    # gum confirm returns 0 for yes, 1 for no, 130 for cancellation (SIGINT)
+    if result.returncode == 0:
+        return True
+    elif result.returncode == 1:
+        return False
+    else:
+        # Any other non-zero return code indicates cancellation or an error
+        secho("🚨 Cancelled.", fg=colors.RED)
+        raise Exit(1)
 
 
 def gum_choose(
@@ -65,22 +60,17 @@ def gum_choose(
         str(limit),
     ] + choices
 
-    try:
-        result: CompletedProcess[str] = subprocess.run(
-            cmd,
-            stdin=sys.stdin,
-            stdout=subprocess.PIPE,
-            stderr=sys.stderr,
-            text=True,
-            check=False,  # Don't raise exception on non-zero exit
-        )
+    result: CompletedProcess[str] = subprocess.run(
+        cmd,
+        stdin=sys.stdin,
+        stdout=subprocess.PIPE,
+        stderr=sys.stderr,
+        text=True,
+        check=False,  # Don't raise exception on non-zero exit
+    )
 
-        if result.returncode != 0:
-            secho("🚨 Cancelled.", fg=colors.RED)
-            raise Exit(1)
+    if result.returncode != 0:
+        secho("🚨 Cancelled.", fg=colors.RED)
+        raise Exit(1)
 
-        return result.stdout.strip()
-
-    except (KeyboardInterrupt, subprocess.CalledProcessError, FileNotFoundError) as e:
-        # Handle user cancellation (KeyboardInterrupt), subprocess errors, or gum not found
-        raise e
+    return result.stdout.strip()
